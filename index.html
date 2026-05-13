@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Borahae Beats</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <h1 class="logo">Borahae Beats</h1>
+
+      <nav class="nav">
+        <h2 class="nav__logo">Amanda</h2>
+
+        <div class="nav__links">
+          <a href="#home" class="nav__link">Home</a>
+          <a href="#search" class="nav__link">Search</a>
+          <a href="#favorites" class="nav__link">Favorites</a>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="app">
+      <section id="home" class="hero">
+        <p class="eyebrow">Music Discovery App</p>
+        <h2 class="hero__title">Find your next favorite song.</h2>
+        <p class="hero__description">
+          Search tracks, preview songs, and save your favorite finds with Borahae Beats.
+        </p>
+      </section>
+
+      <section class="search-section">
+        <form class="search" id="search-form">
+          <input
+            type="text"
+            class="search__input"
+            id="search-input"
+            placeholder="Search artists, songs, or albums..."
+          />
+          <button class="search__button" type="submit">Search</button>
+        </form>
+      </section>
+
+      <section id="search" class="songs-section">
+        <div class="section__header">
+          <h2>Search Results</h2>
+          <p id="results-message">Search for a song to get started.</p>
+        </div>
+
+        <div class="songs" id="songs-list"></div>
+      </section>
+
+      <section id="favorites" class="favorites-section">
+        <div class="section__header">
+          <h2>Favorites</h2>
+          <p>Your saved songs will appear here.</p>
+        </div>
+
+        <div class="songs" id="favorites-list"></div>
+      </section>
+    </main>
+
+    <footer class="player" id="player">
+      <p class="player__empty">No song playing yet.</p>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
