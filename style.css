@@ -1,0 +1,408 @@
+/* =========================
+   🌎 GLOBAL STYLES
+========================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(139, 92, 246, 0.35),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(236, 72, 153, 0.25),
+      transparent 30%
+    ),
+    #080012;
+  color: #f8f7ff;
+}
+
+/* =========================
+   🧭 SIDEBAR / NAVIGATION
+========================= */
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 24px 40px;
+  background: rgba(8, 0, 18, 0.85);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  color: #c4b5fd;
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.nav__logo {
+  font-size: 14px;
+  color: #b8addd;
+  font-weight: 400;
+}
+
+.nav__links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav__link {
+  color: #f8f7ff;
+  text-decoration: none;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.nav__link:hover {
+  color: #c4b5fd;
+}
+
+/* =========================
+   🎵 APP LAYOUT
+========================= */
+.app {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 56px 24px 120px;
+}
+
+/* =========================
+   ✨ HERO SECTION
+========================= */
+.hero {
+  padding: 72px 0 48px;
+}
+.eyebrow {
+  color: #ec4899;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.hero__title {
+  font-size: clamp(42px, 7vw, 84px);
+  line-height: 0.95;
+  max-width: 780px;
+  margin-bottom: 24px;
+}
+.hero__description {
+  max-width: 620px;
+  color: #b8addd;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+/* =========================
+   🔎 SEARCH SECTION
+========================= */
+.search {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.search-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 56px;
+  flex-wrap: wrap;
+}
+
+.search__input {
+  width: 100%;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: #f8f7ff;
+  padding: 0 18px;
+  outline: none;
+}
+
+.search__input::placeholder {
+  color: #b8addd;
+}
+
+.search__button {
+  padding: 0 24px;
+  height: 52px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 200ms ease;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+}
+
+.search__button:hover {
+  transform: translateY(-2px);
+}
+/* =========================
+   🎛️ SORT DROPDOWN
+========================= */
+.sort-select {
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8f7ff;
+  padding: 0 18px;
+  outline: none;
+}
+/* =========================
+   🎶 SONG GRID
+========================= */
+.songs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+.section__header {
+  margin-bottom: 24px;
+}
+
+.section__header h2 {
+  font-size: 32px;
+  margin-bottom: 8px;
+  color: #b8addd;
+}
+
+.section__header p,
+#results-message {
+  color: #b8addd;
+}
+
+/* =========================
+   💜 SONG CARDS
+========================= */
+.song-card {
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  transition: 200ms ease;
+}
+
+.song-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(196, 181, 253, 0.45);
+}
+
+.song-card__image {
+  width: 100%;
+  border-radius: 18px;
+  margin-bottom: 8px;
+}
+
+.song-card__content h3 {
+  color: #b8addd;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.favorite-btn,
+.remove-btn {
+  width: 100%;
+  padding: 12px 16px;
+  margin: 12px 0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 200ms ease;
+}
+
+.favorite-btn {
+  background: rgba(236, 72, 153, 0.18);
+  color: #f8f7ff;
+}
+
+.remove-btn {
+  background: rgba(236, 72, 153, 0.18);
+  color: #f8f7ff;
+}
+
+.favorite-btn:hover,
+.remove-btn:hover {
+  background: rgba(236, 72, 153, 0.35);
+}
+
+/* =========================
+   🎧 AUDIO PLAYER
+========================= */
+audio {
+  width: 100%;
+  margin-top: 8px;
+}
+/* =========================
+   🌟 FAVORITES SECTION
+========================= */
+.favorites-section {
+  display: none;
+  margin-top: 72px;
+}
+
+.favorites-section.active {
+  display: block;
+}
+
+.empty-message {
+  padding: 24px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #b9addd;
+  text-align: center;
+}
+/* =========================
+   👀 VIEW ALL BUTTON
+========================= */
+.songs__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.view-all-btn {
+  padding: 0 24px;
+  height: 52px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 200ms ease;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+  box-shadow: 0 12px 30px rgba(139, 92, 246, 0.35);
+}
+/* =========================
+   🦋 FLOATING DECORATIONS
+========================= */
+.floating-icons {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.floating-icon {
+  position: absolute;
+  font-size: 24px;
+  opacity: 0.15;
+  animation: floatUp 18s linear infinite;
+}
+
+.floating-icon:nth-child(1) {
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.floating-icon:nth-child(2) {
+  left: 25%;
+  animation-delay: 3s;
+}
+
+.floating-icon:nth-child(3) {
+  left: 45%;
+  animation-delay: 6s;
+}
+
+.floating-icon:nth-child(4) {
+  left: 65%;
+  animation-delay: 9s;
+}
+
+.floating-icon:nth-child(5) {
+  left: 80%;
+  animation-delay: 12s;
+}
+
+.floating-icon:nth-child(6) {
+  left: 92%;
+  animation-delay: 15s;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.15;
+  }
+
+  90% {
+    opacity: 0.15;
+  }
+
+  100% {
+    transform:
+      translateY(-120vh)
+      rotate(360deg);
+
+    opacity: 0;
+  }
+}
+
+/* =========================
+   📱 RESPONSIVE DESIGN
+========================= */
+@media (max-width: 700px) {
+  .sidebar {
+    padding: 20px;
+  }
+
+  .nav {
+    align-items: flex-start;
+    gap: 16px;
+    flex-direction: column;
+  }
+
+  .nav__links {
+    width: 100%;
+    justify-content: space-between;
+    transition: 200ms ease;
+  }
+
+  .search-section,
+  .search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search__button,
+  .sort-select,
+  .view-all-btn {
+    width: 100%;
+  }
+
+  .app {
+    padding-inline: 18px;
+  }
+}

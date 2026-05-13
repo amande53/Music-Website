@@ -2,22 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Borahae Beats</title>
+
     <link rel="stylesheet" href="./style.css" />
+    <script
+      src="https://kit.fontawesome.com/ac905b6cea.js"
+      crossorigin="anonymous"
+    ></script>
   </head>
 
   <body>
+    <div class="floating-icons">
+      <span class="floating-icon">💜</span>
+      <span class="floating-icon">✨</span>
+      <span class="floating-icon">🎵</span>
+      <span class="floating-icon">🎧</span>
+      <span class="floating-icon">🦋</span>
+      <span class="floating-icon">🌙</span>
+    </div>
+
     <aside class="sidebar">
       <h1 class="logo">Borahae Beats</h1>
 
       <nav class="nav">
-        <h2 class="nav__logo">Amanda</h2>
-
         <div class="nav__links">
-          <a href="#home" class="nav__link">Home</a>
-          <a href="#search" class="nav__link">Search</a>
-          <a href="#favorites" class="nav__link">Favorites</a>
+          <i class="fa-solid fa-music nav__logo"></i>
+
+          <a href="#home" class="nav__link"> Home </a>
+
+          <a href="#search" class="nav__link"> Search </a>
+
+          <a href="#favorites" class="nav__link"> Favorites </a>
+
+          <i class="fa-solid fa-music nav__logo"></i>
         </div>
       </nav>
     </aside>
@@ -25,9 +45,12 @@
     <main class="app">
       <section id="home" class="hero">
         <p class="eyebrow">Music Discovery App</p>
+
         <h2 class="hero__title">Find your next favorite song.</h2>
+
         <p class="hero__description">
-          Search tracks, preview songs, and save your favorite finds with Borahae Beats.
+          Search tracks, preview songs, and save your favorite finds with
+          Borahae Beats.
         </p>
       </section>
 
@@ -39,22 +62,37 @@
             id="search-input"
             placeholder="Search artists, songs, or albums..."
           />
+
           <button class="search__button" type="submit">Search</button>
         </form>
+
+        <select id="sort-select" class="sort-select">
+          <option value="default">Sort</option>
+
+          <option value="a-z">A → Z</option>
+
+          <option value="z-a">Z → A</option>
+        </select>
       </section>
 
       <section id="search" class="songs-section">
         <div class="section__header">
           <h2>Search Results</h2>
+
           <p id="results-message">Search for a song to get started.</p>
         </div>
 
         <div class="songs" id="songs-list"></div>
+
+        <div class="songs__actions">
+          <button id="view-all-btn" class="view-all-btn">View All</button>
+        </div>
       </section>
 
       <section id="favorites" class="favorites-section">
         <div class="section__header">
           <h2>Favorites</h2>
+
           <p>Your saved songs will appear here.</p>
         </div>
 
@@ -64,6 +102,7 @@
 
     <footer class="player" id="player">
       <p class="player__empty">No song playing yet.</p>
+      <p>The next era is coming soon 🎵</p>
     </footer>
 
     <script src="./app.js"></script>
