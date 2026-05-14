@@ -35,7 +35,9 @@
 
           <a href="#search" class="nav__link"> Search </a>
 
-          <a href="#favorites" class="nav__link"> Favorites </a>
+          <a href="#favorites" class="nav__link" id="favorites-link">
+            Favorites (0)
+          </a>
 
           <i class="fa-solid fa-music nav__logo"></i>
         </div>
@@ -64,6 +66,9 @@
           />
 
           <button class="search__button" type="submit">Search</button>
+          <button class="clear-btn inactive" id="clear-btn" type="button">
+            Clear
+          </button>
         </form>
 
         <select id="sort-select" class="sort-select">
@@ -81,11 +86,14 @@
 
           <p id="results-message">Search for a song to get started.</p>
         </div>
+        <div class="loader hidden" id="loader"></div>
 
         <div class="songs" id="songs-list"></div>
 
         <div class="songs__actions">
-          <button id="view-all-btn" class="view-all-btn">View All</button>
+          <button id="view-all-btn" class="view-all-btn hidden">
+            View All
+          </button>
         </div>
       </section>
 
@@ -102,7 +110,7 @@
 
     <footer class="player" id="player">
       <p class="player__empty">No song playing yet.</p>
-      <p>The next era is coming soon 🎵</p>
+     
     </footer>
 
     <script src="./app.js"></script>
