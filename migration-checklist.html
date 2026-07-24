@@ -1,0 +1,1982 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Borahae Beats → Next.js Migration Checklist</title>
+<style>
+  :root {
+    --bg: #080012;
+    --card: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.1);
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --text: #f8f7ff;
+    --muted: #b8addd;
+    --teal: #2dd4bf;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(139,92,246,0.30), transparent 35%),
+      radial-gradient(circle at bottom right, rgba(236,72,153,0.20), transparent 35%),
+      var(--bg);
+    color: var(--text);
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin: 0 0 20px; line-height: 1.5; }
+
+  .overall {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+  }
+  .overall-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .overall-top strong { font-size: 15px; }
+  .overall-count { color: var(--muted); font-size: 13px; }
+  .bar-track {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--purple), var(--pink));
+    width: 0%;
+    transition: width 250ms ease;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: transform 150ms ease, opacity 150ms ease;
+  }
+  button:hover { transform: translateY(-1px); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    color: white;
+  }
+  .btn-secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .save-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin: -18px 0 24px;
+    line-height: 1.5;
+  }
+
+  .phase {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    cursor: pointer;
+    gap: 12px;
+  }
+  .phase-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .phase-meta { font-size: 12px; color: var(--muted); white-space: nowrap; display:flex; align-items:center; gap:10px; }
+  .phase-mini-bar {
+    width: 60px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+  .phase-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--pink));
+  }
+  .chevron { transition: transform 200ms ease; opacity: 0.7; font-size: 12px; }
+  .phase.collapsed .chevron { transform: rotate(-90deg); }
+  .phase.phase-fully-done { border-color: rgba(45,212,191,0.4); }
+  .phase.phase-fully-done .phase-title::after {
+    content: " ✓";
+    color: var(--teal);
+  }
+  .phase-items {
+    padding: 0 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .phase.collapsed .phase-items { display: none; }
+
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .item:hover { background: rgba(255,255,255,0.04); }
+  .item input {
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--pink);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .item span {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .item-row.checked > .item-main > span {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: rgba(184,173,221,0.5);
+  }
+
+  .item-row { border-radius: 10px; }
+  .item-row:hover { background: rgba(255,255,255,0.04); }
+  .item-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 6px;
+    cursor: pointer;
+  }
+  .item-main input {
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--pink);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .item-main span {
+    font-size: 14px;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .why-toggle {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--pink);
+    background: rgba(236,72,153,0.14);
+    border: 1px solid rgba(236,72,153,0.3);
+    border-radius: 999px;
+    padding: 2px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-top: 1px;
+  }
+  .why-toggle:hover { background: rgba(236,72,153,0.24); }
+  .why-box {
+    display: none;
+    margin: 0 6px 10px 32px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    background: rgba(139,92,246,0.10);
+    border-left: 2px solid var(--purple);
+    border-radius: 0 10px 10px 0;
+  }
+  .item-row.explained .why-box { display: block; }
+  .why-box a.learn-more {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pink);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(236,72,153,0.4);
+  }
+  .why-box a.learn-more:hover { border-bottom-color: var(--pink); }
+
+  .steps-toggle {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple);
+    background: rgba(139,92,246,0.14);
+    border: 1px solid rgba(139,92,246,0.35);
+    border-radius: 999px;
+    padding: 2px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-top: 1px;
+  }
+  .steps-toggle:hover { background: rgba(139,92,246,0.26); }
+  .steps-box {
+    display: none;
+    margin: 0 6px 10px 32px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    background: rgba(236,72,153,0.08);
+    border-left: 2px solid var(--pink);
+    border-radius: 0 10px 10px 0;
+  }
+  .item-row.steps-shown .steps-box { display: block; }
+  .steps-box ol {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: step-counter;
+  }
+  .steps-box li {
+    margin: 0 0 6px 0;
+    counter-increment: step-counter;
+  }
+  .steps-box li:last-child { margin-bottom: 0; }
+  .step-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .step-label input {
+    margin-top: 3px;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--pink);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .step-label span { flex: 1; }
+  .step-label span::before {
+    content: counter(step-counter) ". ";
+    font-weight: 700;
+    color: var(--pink);
+  }
+  .steps-box li.step-done .step-label span {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: rgba(184,173,221,0.5);
+  }
+  .step-progress {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  .needs-toggle {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--teal);
+    background: rgba(45,212,191,0.14);
+    border: 1px solid rgba(45,212,191,0.35);
+    border-radius: 999px;
+    padding: 2px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-top: 1px;
+  }
+  .needs-toggle:hover { background: rgba(45,212,191,0.26); }
+  .needs-box {
+    display: none;
+    margin: 0 6px 10px 32px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    background: rgba(45,212,191,0.08);
+    border-left: 2px solid var(--teal);
+    border-radius: 0 10px 10px 0;
+  }
+  .item-row.needs-shown .needs-box { display: block; }
+  .needs-box .needs-group { margin: 0 0 8px 0; }
+  .needs-box .needs-group:last-child { margin-bottom: 0; }
+  .needs-box .needs-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--teal);
+    margin-bottom: 3px;
+  }
+  .needs-box ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .needs-box li {
+    margin: 0 0 3px 0;
+  }
+  .needs-box li:last-child { margin-bottom: 0; }
+  .needs-box code {
+    background: rgba(45,212,191,0.14);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .needs-box .needs-none {
+    font-style: italic;
+    color: var(--muted);
+    opacity: 0.8;
+  }
+
+  footer {
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .resources {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-top: 28px;
+    overflow: hidden;
+  }
+  .resources-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    cursor: pointer;
+  }
+  .resources-header h2 {
+    font-size: 16px;
+    margin: 0;
+  }
+  .resources-body {
+    padding: 4px 18px 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .resources.collapsed .resources-body { display: none; }
+  .resources.collapsed .chevron { transform: rotate(-90deg); }
+  .resource-group h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 8px;
+  }
+  .resource-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .resource-group a {
+    color: var(--text);
+    font-size: 13px;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 1px;
+  }
+  .resource-group a:hover {
+    color: var(--pink);
+    border-bottom-color: var(--pink);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Next.js + Tailwind Migration Checklist</h1>
+    <p class="subtitle">Borahae Beats — everything in one place: the checklist, plain-language explanations for every step, concrete step-by-step instructions, and links to the official docs. Tap an item to check it off, tap "Why?" for the explanation, or tap "Steps" for exactly what to do (no code given — you write it yourself). Skip whichever boxes you don't need — assumes JS/React basics but no prior Next.js/Tailwind experience.</p>
+  </header>
+
+  <div class="overall">
+    <div class="overall-top">
+      <strong>Overall progress</strong>
+      <span class="overall-count" id="overall-count">0 / 0 done</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="overall-fill"></div></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" id="save-btn">💾 Save progress (download)</button>
+    <button class="btn-secondary" id="reset-btn">Reset all</button>
+    <button class="btn-secondary" id="expand-btn">Expand all phases</button>
+    <button class="btn-secondary" id="collapse-btn">Collapse all phases</button>
+    <button class="btn-secondary" id="explain-all-btn">Show all explanations</button>
+    <button class="btn-secondary" id="steps-all-btn">Show all steps</button>
+    <button class="btn-secondary" id="needs-all-btn">Show all props/state</button>
+    <button class="btn-secondary" id="hide-completed-btn">Hide completed phases</button>
+  </div>
+  <p class="save-note">This tab keeps your checkmarks only while it's open. Click <strong>"Save progress"</strong> whenever you want to lock in your progress — it downloads an updated copy of this file with your checkmarks baked in. Open that downloaded file next time (double-click it, or open it in a browser tab) to keep going from where you left off.</p>
+
+  <div class="resources collapsed" id="resources">
+    <div class="resources-header" id="resources-header">
+      <h2>📚 Documentation &amp; Resources</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="resources-body">
+      <div class="resource-group">
+        <h3>Next.js</h3>
+        <ul>
+          <li><a href="https://nextjs.org/docs" target="_blank" rel="noopener">Docs home</a></li>
+          <li><a href="https://nextjs.org/docs/app" target="_blank" rel="noopener">App Router overview</a></li>
+          <li><a href="https://nextjs.org/docs/app/getting-started/server-and-client-components" target="_blank" rel="noopener">Server &amp; Client Components ("use client")</a></li>
+          <li><a href="https://nextjs.org/docs/app/getting-started/route-handlers" target="_blank" rel="noopener">Route Handlers</a></li>
+          <li><a href="https://nextjs.org/docs/app/getting-started/linking-and-navigating" target="_blank" rel="noopener">Linking &amp; Navigating (next/link)</a></li>
+          <li><a href="https://nextjs.org/docs/app/api-reference/components/image" target="_blank" rel="noopener">&lt;Image&gt; component</a></li>
+          <li><a href="https://nextjs.org/docs/app/getting-started/metadata-and-og-images" target="_blank" rel="noopener">Metadata &amp; OG images</a></li>
+          <li><a href="https://nextjs.org/docs/app/getting-started/css" target="_blank" rel="noopener">CSS in Next.js (incl. Tailwind)</a></li>
+          <li><a href="https://nextjs.org/docs/app/api-reference/config/typescript" target="_blank" rel="noopener">TypeScript configuration</a></li>
+        </ul>
+      </div>
+      <div class="resource-group">
+        <h3>Tailwind CSS v4</h3>
+        <ul>
+          <li><a href="https://tailwindcss.com/docs" target="_blank" rel="noopener">Docs home</a></li>
+          <li><a href="https://tailwindcss.com/docs/installation/framework-guides/nextjs" target="_blank" rel="noopener">Install with Next.js</a></li>
+          <li><a href="https://tailwindcss.com/docs/theme" target="_blank" rel="noopener">Theme variables &amp; @theme directive</a></li>
+          <li><a href="https://tailwindcss.com/docs/responsive-design" target="_blank" rel="noopener">Responsive design / breakpoints</a></li>
+          <li><a href="https://nextjs.org/docs/app/guides/tailwind-v3-css" target="_blank" rel="noopener">If you need Tailwind v3 instead</a></li>
+        </ul>
+      </div>
+      <div class="resource-group">
+        <h3>shadcn/ui</h3>
+        <ul>
+          <li><a href="https://ui.shadcn.com/docs" target="_blank" rel="noopener">Docs home</a></li>
+          <li><a href="https://ui.shadcn.com/docs/installation/next" target="_blank" rel="noopener">Install with Next.js</a></li>
+          <li><a href="https://ui.shadcn.com/docs/tailwind-v4" target="_blank" rel="noopener">Using shadcn/ui with Tailwind v4</a></li>
+          <li><a href="https://ui.shadcn.com/docs/cli" target="_blank" rel="noopener">CLI reference (add components)</a></li>
+          <li><a href="https://ui.shadcn.com/docs/components-json" target="_blank" rel="noopener">components.json reference</a></li>
+          <li><a href="https://ui.shadcn.com/docs/components" target="_blank" rel="noopener">Browse all components</a></li>
+        </ul>
+      </div>
+      <div class="resource-group">
+        <h3>React hooks used here</h3>
+        <ul>
+          <li><a href="https://react.dev/reference/react" target="_blank" rel="noopener">React reference home</a></li>
+          <li><a href="https://react.dev/reference/react/useState" target="_blank" rel="noopener">useState</a></li>
+          <li><a href="https://react.dev/reference/react/useEffect" target="_blank" rel="noopener">useEffect</a></li>
+          <li><a href="https://react.dev/reference/react/useRef" target="_blank" rel="noopener">useRef</a></li>
+          <li><a href="https://react.dev/reference/react/useMemo" target="_blank" rel="noopener">useMemo</a></li>
+        </ul>
+      </div>
+      <div class="resource-group">
+        <h3>TypeScript (if you go that route)</h3>
+        <ul>
+          <li><a href="https://www.typescriptlang.org/docs/handbook/intro.html" target="_blank" rel="noopener">TypeScript Handbook</a></li>
+          <li><a href="https://www.typescriptlang.org/docs/" target="_blank" rel="noopener">TypeScript Docs home</a></li>
+          <li><a href="https://react-typescript-cheatsheet.netlify.app/" target="_blank" rel="noopener">React + TypeScript Cheatsheet</a></li>
+        </ul>
+      </div>
+      <div class="resource-group">
+        <h3>Icons</h3>
+        <ul>
+          <li><a href="https://docs.fontawesome.com/web/use-with/react/use-with" target="_blank" rel="noopener">Font Awesome — Use with React</a></li>
+          <li><a href="https://react-icons.github.io/react-icons/" target="_blank" rel="noopener">react-icons</a></li>
+        </ul>
+      </div>
+      <div class="resource-group">
+        <h3>APIs &amp; browser features</h3>
+        <ul>
+          <li><a href="https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/index.html" target="_blank" rel="noopener">iTunes Search API reference</a></li>
+          <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage" target="_blank" rel="noopener">MDN: localStorage</a></li>
+          <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API" target="_blank" rel="noopener">MDN: Fetch API</a></li>
+        </ul>
+      </div>
+      <div class="resource-group">
+        <h3>Deployment &amp; Git</h3>
+        <ul>
+          <li><a href="https://vercel.com/docs/frameworks/full-stack/nextjs" target="_blank" rel="noopener">Next.js on Vercel</a></li>
+          <li><a href="https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging" target="_blank" rel="noopener">Git branching basics</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="phases"></div>
+
+  <footer>
+    Generated for the Borahae Beats → Next.js + Tailwind migration. No data leaves this file — everything runs locally in your browser.
+  </footer>
+</div>
+
+<script id="saved-state" type="application/json">{}</script>
+<script>
+const DATA = [
+  {
+    "title": "Phase 0: Prep and branching",
+    "items": [
+      {
+        "text": "Commit or stash any uncommitted work on main/dev so the migration starts from a clean tree.",
+        "why": "Git branches only isolate committed history — anything you haven't committed follows you around no matter which branch you're on. Starting clean means if something goes wrong later, you can always tell what changed because of the migration versus what was already there.",
+        "link": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging",
+        "steps": [
+          "Open a terminal in your project's root folder (the folder that contains your existing index.html/app.js/style.css).",
+          "Type git status and press Enter to see a list of modified and untracked files.",
+          "Decide, file by file, which changes you want to keep versus discard.",
+          "For changes you want to keep, type git add . to stage everything, then type git commit -m \"pre-migration checkpoint\" and press Enter.",
+          "For changes you're not ready to commit yet, type git stash instead of committing — this sets them aside without losing them.",
+          "Run git status one more time and confirm it prints \"nothing to commit, working tree clean\" before continuing."
+        ]
+      },
+      {
+        "text": "Create a new branch (e.g. nextjs-migration) so the current vanilla site stays intact on main until the rewrite is verified.",
+        "why": "This is your safety net. Since the rewrite touches almost every file, working on a branch means the working site on main is never at risk — if the migration stalls or you change your mind halfway through, you can just stop and go back to main.",
+        "link": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging",
+        "steps": [
+          "In the same terminal, still inside your project folder, type git branch and press Enter to see your current branch name (usually main).",
+          "Type git checkout -b nextjs-migration and press Enter — this creates the new branch and switches you onto it in one step.",
+          "Type git branch again and confirm the branch listed with a * next to it is now nextjs-migration.",
+          "Type git push -u origin nextjs-migration and press Enter to push this new branch to your remote so it's backed up.",
+          "Whenever you want to go back to the untouched original site, you can type git checkout main."
+        ]
+      },
+      {
+        "text": "Decide App Router vs Pages Router — use the App Router (create-next-app default) for a new 2026 project.",
+        "why": "Next.js has two different systems for organizing pages. The App Router (folders with special files like page.js and layout.js, using React Server Components) is the current standard and what create-next-app sets up by default. The older Pages Router still works but nearly all current tutorials and docs assume App Router, so there's no reason to pick the old one for a brand-new project.",
+        "link": "https://nextjs.org/docs/app",
+        "steps": [
+          "Open the App Router overview link in the Documentation section above in a browser tab.",
+          "Read just the first section describing what the App Router is.",
+          "No file changes are needed for this item — this is purely a decision.",
+          "Open a plain text file (or your README) and write one line noting \"Using App Router\" so you remember it when running create-next-app in Phase 1."
+        ]
+      },
+      {
+        "text": "Decide JavaScript vs TypeScript for the new project.",
+        "why": "TypeScript adds type-checking on top of JavaScript — it would catch things like typing song.trackid instead of song.trackId before you even run the code. It's genuinely useful once you're passing the same song object through five components, but it's also one more thing to learn. Totally fine to stick with plain JS for this migration and pick up TypeScript later.",
+        "link": "https://www.typescriptlang.org/docs/handbook/intro.html",
+        "steps": [
+          "Reread the Why explanation above.",
+          "If you're unsure, default to JavaScript — it's the safer choice for your first Next.js project.",
+          "Write your decision down in the same notes file/README line as the previous item, e.g. \"Using JavaScript for now.\"",
+          "Remember this decision — you'll need to answer a prompt about it in Phase 1 exactly the way you wrote it down."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 1: Scaffold the project",
+    "items": [
+      {
+        "text": "Run npx create-next-app@latest with App Router, Tailwind CSS, and ESLint enabled.",
+        "why": "This one command generates the entire folder structure, config files, and package.json for you — you answer a few prompts (App Router: yes, Tailwind: yes, ESLint: yes) and it wires everything together so you don't hand-configure Tailwind's build pipeline yourself.",
+        "link": "https://nextjs.org/docs/app/getting-started",
+        "steps": [
+          "Open a terminal and use cd to navigate to the parent folder where you want your new project folder to live (not inside your old vanilla project folder).",
+          "Type npx create-next-app@latest and press Enter.",
+          "When it asks for a project name, type something like borahae-beats and press Enter.",
+          "When it asks \"Would you like to use TypeScript?\", answer according to your Phase 0 decision (y or n, then Enter).",
+          "When it asks about ESLint, answer Yes.",
+          "When it asks about Tailwind CSS, answer Yes.",
+          "When it asks about the src/ directory, answer either way — just remember your choice since it affects where files go later.",
+          "When it asks about the App Router, answer Yes.",
+          "Once it finishes, type cd borahae-beats (or whatever name you chose) to move into the new project folder."
+        ]
+      },
+      {
+        "text": "Confirm globals.css has the line @import \"tailwindcss\"; and npm run dev shows the default starter page.",
+        "why": "This is just a sanity check. Tailwind v4 (current version) uses this single @import line instead of v3's three separate @tailwind directives — if you see @tailwind base/components/utilities in a tutorial instead, that's older v3 syntax. Either way, you want to find out now if something's wrong with the install — on the empty starter page — rather than after you've written three components on top of a broken setup.",
+        "link": "https://nextjs.org/docs/app/getting-started/css",
+        "steps": [
+          "In your file explorer or code editor, open the app folder inside your new project, then open the file named globals.css.",
+          "Confirm the very first line reads exactly @import \"tailwindcss\";.",
+          "Back in your terminal (still inside the project folder), type npm run dev and press Enter.",
+          "Copy the localhost URL the terminal prints (usually http://localhost:3000) and paste it into your browser's address bar.",
+          "Confirm you see the default Next.js starter page with no red error text in the terminal.",
+          "Press Ctrl+C in the terminal to stop the dev server once you've confirmed this."
+        ]
+      },
+      {
+        "text": "Copy the assets/ folder into public/assets/ for future static images/icons.",
+        "why": "Next.js has a convention: anything inside the /public folder is served as-is from the site's root URL. So a file at public/assets/logo.png becomes available at yoursite.com/assets/logo.png. This is different from your current setup where app.js/style.css just reference files by relative path.",
+        "link": "https://nextjs.org/docs/app/api-reference/file-conventions/public-folder",
+        "steps": [
+          "Open your file explorer and locate the assets folder inside your old vanilla project.",
+          "Inside your new Next.js project folder, open the public folder.",
+          "Create a new folder inside public named exactly assets.",
+          "Copy every file from the old assets folder and paste them into the new public/assets folder.",
+          "Remember: any code that references these files later should use a path starting with /assets/ (no \"public\" in the path)."
+        ]
+      },
+      {
+        "text": "Delete the boilerplate content in app/page.js and app/layout.js.",
+        "why": "create-next-app ships a demo homepage (the Next.js logo, links to docs, etc.) so you know the install worked. It's not meant to be built on top of — clear it out first so you're never confused about which JSX is the starter template and which is your real code.",
+        "link": "https://nextjs.org/docs/app/getting-started/project-structure",
+        "steps": [
+          "Open app/page.tsx in your code editor.",
+          "Select everything inside the return ( ... ) parentheses and delete it.",
+          "Type a simple placeholder in its place, such as a single heading, so the file still returns something valid.",
+          "Save the file.",
+          "Open app/layout.tsx and find the demo content Next.js generated (extra styling, links to nextjs.org, etc.).",
+          "Delete that demo content, keeping only the html and body tags and the {children} expression.",
+          "Save the file and run npm run dev again to confirm the page now shows your simplified placeholder instead of the demo page."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 2: Map out the component breakdown",
+    "items": [
+      {
+        "text": "Layout / app/layout.tsx — html/body shell, fonts, metadata (replaces <head>).",
+        "why": "app/layout.tsx is a reserved filename in the App Router — Next.js automatically wraps every page with whatever you put here. Think of it as your <html>/<head>/<body> shell that's rendered once and shared across the whole site, instead of repeating that boilerplate in every HTML file.",
+        "link": "https://nextjs.org/docs/app/api-reference/file-conventions/layout",
+        "steps": [
+          "Open your code editor to the app folder and confirm layout.tsx already exists — create-next-app generated it in Phase 1, so you don't create a new file for this item.",
+          "Read through this phase's other items and Phase 11's metadata item so you know what will eventually live in this file (html/body shell, fonts, metadata).",
+          "For now, just confirm the file only contains the html and body tags wrapping {children}, with nothing else — you already cleared it in Phase 1.",
+          "Leave the actual metadata/font code for their own checklist items later — this item is just about understanding layout.tsx's reserved role."
+        ],
+        "needs": {
+          "props": [
+            "children: React.ReactNode (Next.js passes this in automatically — every page renders inside it)"
+          ],
+          "features": [
+            "No \"use client\" — layout.tsx stays a Server Component",
+            "export const metadata = { ... } (Next.js Metadata API, see Phase 11)",
+            "A NowPlayingProvider wrapped around {children} (see Phase 6 — needed so Player and SongCard can share state)"
+          ]
+        }
+      },
+      {
+        "text": "Sidebar / Nav — the sidebar with logo and anchor links (Home / Search / Favorites count).",
+        "why": "A direct, low-risk extraction — this section has no state of its own (other than reading the favorites count from a parent), so it's a good first component to practice the 'turn old HTML into a JSX component in its own file' motion.",
+        "link": "https://react.dev/learn/your-first-component",
+        "steps": [
+          "Create a components folder at your project root if it doesn't exist yet (next to the app folder), then create a new file inside it named exactly sidebar.tsx.",
+          "At the top of the file, write a default-exported function named Sidebar with no props yet.",
+          "Rewrite the HTML for your old sidebar/nav section (the logo and Home/Search/Favorites links) from your old index.html as JSX inside its return statement — the structure stays basically the same, you're just changing class= to className= and closing any self-closing tags.",
+          "Decide the exact prop names this component needs — for example a number for the favorites count and a function for the Favorites-link click handler — and write them down.",
+          "Above the function, define a props type/interface listing those exact names and types.",
+          "Update the function signature to destructure those named props.",
+          "Save the file, then in app/page.tsx import Sidebar from \"@/components/sidebar\" and render <Sidebar /> in the JSX, passing placeholder values for its props for now."
+        ],
+        "needs": {
+          "props": [
+            "favoritesCount: number (drives the \"Favorites (3)\" text on the nav link)"
+          ],
+          "features": [
+            "next/link for Home / Search / Favorites once real routes exist (Option C) instead of <a href=\"#...\">",
+            "\"use client\" only if you add active-link highlighting — otherwise it can stay a Server Component"
+          ]
+        }
+      },
+      {
+        "text": "Hero — the #home section (eyebrow, title, description, a call-to-action button to Search, quick genre/artist chips, and a featured song preview).",
+        "why": "This grew beyond 'static, no state needed' once you decided to add a featured song preview — but it doesn't have to become a Client Component just because of that. Next.js lets a Server Component's function be async and fetch data directly, no useEffect/useState required, so Hero itself can stay a Server Component even though it now fetches a song. The one piece that DOES need client-side info is whether that featured song is already a favorite (favorites live in localStorage, which only exists in the browser) — so that one small piece gets split into its own tiny Client Component that Hero renders, instead of making the whole Hero client-side just for one boolean.",
+        "link": "https://nextjs.org/docs/app/building-your-application/data-fetching/fetching",
+        "steps": [
+          "Create a new file at components/hero.tsx.",
+          "Add a default-exported function named Hero with empty parentheses (no props) — keep it as a plain function for now, you'll make it async in a later step.",
+          "Rewrite the HTML for the eyebrow/title/description from your old #home section as JSX inside its return statement (same structure, just class= becomes className=).",
+          "Below the description, add a call-to-action link using next/link pointing to /search (for example \"Start Searching →\"), styled as a button.",
+          "Below that, add a row of 4-6 quick genre/artist chip links — plain next/link elements, each pointing to /search?q=<term> with the term URL-encoded (e.g. encodeURIComponent(\"BTS\")).",
+          "Pick one fixed search term to represent your \"featured\" pick, since there's no real trending-data source yet (something on-brand, like a specific artist name) — write it down, you'll reuse it in the next step.",
+          "Change Hero's function signature to async function Hero() and, near the top of the function body, call fetch directly against the YouTube Data API v3 search endpoint (https://www.googleapis.com/youtube/v3/search) using that fixed term plus your API key, await the response, parse the JSON, and take the first item in data.items as your featured song — this works safely in a Server Component without useEffect, since the fetch only ever runs on the server, so your API key never reaches the browser.",
+          "Create a second new file, components/featured-song.tsx, with \"use client\"; as its first line — this is the small Client Component that needs the browser-only favorites data.",
+          "In featured-song.tsx, define props for a single song, call your useFavorites() hook internally, and render <SongCard> passing that song plus the isFavorite/onFavoriteToggle values the hook gives you.",
+          "Back in hero.tsx, import FeaturedSong from \"@/components/featured-song\" and render it below the chips, passing the song object you fetched as a prop.",
+          "Do not type \"use client\" in hero.tsx itself — only featured-song.tsx needs it.",
+          "Save both files, then in app/page.tsx import Hero from \"@/components/hero\" and render <Hero /> (note: since Hero is now async, this works because app/page.tsx is itself a Server Component that can render async children directly)."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "async function Hero() — a Server Component that fetches the featured search results directly (no useState/useEffect needed here)",
+            "A separate components/featured-song.tsx Client Component for the favorites-aware preview card",
+            "That child needs \"use client\" + useContext (or useFavorites()) to check/toggle favorite status"
+          ]
+        }
+      },
+      {
+        "text": "SearchBar — the search form + sort select + clear button. Needs client state.",
+        "why": "Unlike Hero, this component has to react to typing and clicking, which means it needs React state and event handlers — so this is one of the components that will need the \"use client\" directive.",
+        "link": "https://react.dev/learn/responding-to-events",
+        "steps": [
+          "Create a new file at components/search-bar.tsx.",
+          "As the very first line of the file, type exactly: \"use client\"; (on its own line, before any imports).",
+          "Below that, add an import line for useState from \"react\".",
+          "Add a default-exported function named SearchBar.",
+          "Rewrite the HTML for your old search section's form/input/select/button as JSX inside its return statement (same structure, class= becomes className=).",
+          "Decide the exact prop names it needs from its parent — for example the current search text, a text-change handler, a submit handler, the current sort value, and a sort-change handler — and write these five names down.",
+          "Above the function, add a props type/interface listing those exact names and types, and destructure them in the function signature.",
+          "Save the file, then import and render <SearchBar /> from app/page.tsx, passing temporary no-op functions and empty strings for its props until Phase 3 wires up real state."
+        ],
+        "needs": {
+          "props": [
+            "None required — OR onSearch?: (term: string, sort: string) => void if a parent needs to know when a search runs"
+          ],
+          "features": [
+            "\"use client\" (form inputs need interactivity)",
+            "useState for the input value and the sort value",
+            "useRouter / useSearchParams (from next/navigation) if search results live in the URL, e.g. /search?q=..."
+          ]
+        }
+      },
+      {
+        "text": "SongCard — the songCard() template becomes a real component (props: song, isFavorite, onFavoriteToggle).",
+        "why": "Right now songCard() is a JavaScript function that returns an HTML string, repeated for every search result. In React you don't build HTML strings — you build a reusable component that takes a song object as a prop and returns JSX, which React then renders once per item in your results array.",
+        "link": "https://react.dev/learn/passing-props-to-a-component",
+        "steps": [
+          "Create a new file at components/song-card.tsx.",
+          "Above the component, define an interface named Song listing exactly these four fields with their types: videoId (string), title (string), channelTitle (string), thumbnailUrl (string) — this matches what a YouTube Data API v3 search result gives you, once you've pulled the fields you need out of the raw response's nested id/snippet/thumbnails objects.",
+          "Define a second interface named SongCardProps with three fields: song (of type Song), isFavorite (boolean), and onFavoriteToggle (a function taking a videoId string, returning nothing).",
+          "Write an exported function named SongCard that destructures song, isFavorite, and onFavoriteToggle from its props, typed with SongCardProps.",
+          "Rewrite the HTML string pieces from your old songCard() template function as JSX inside this component's return statement, converting the string-concatenation into JSX expressions that reference the destructured song fields by name (e.g. <h3>{song.title}</h3>, <img src={song.thumbnailUrl} />) — note there's no previewUrl or <audio> element here anymore, since playback is handled through a shared player elsewhere (see Phase 6).",
+          "Save the file — don't render it anywhere yet; SongsGrid and FavoritesSection will do that in the next two items."
+        ],
+        "needs": {
+          "props": [
+            "song: Song (videoId, title, channelTitle, thumbnailUrl)",
+            "isFavorite: boolean",
+            "onToggleFavorite: (videoId: string) => void"
+          ],
+          "features": [
+            "\"use client\" (has an onClick handler)",
+            "useContext(NowPlayingContext) for the play button, instead of an <audio> element living inside this component (see Phase 6)"
+          ]
+        }
+      },
+      {
+        "text": "SongsGrid / SearchResults — results message, loader, grid of SongCards, View All button.",
+        "why": "This component's job is orchestration: it takes the list of songs (from state) and decides what to render — a loading spinner, an empty message, or a grid of <SongCard> components. It doesn't need its own copy of the song data logic, just the array and a couple of booleans.",
+        "link": "https://react.dev/learn/conditional-rendering",
+        "steps": [
+          "Create a new file at components/songs-grid.tsx (pick this exact name and use it consistently everywhere else you reference it).",
+          "Define a props interface with fields for: the array of songs to display, a loading boolean, the current search text, and a showAll boolean (for the View All toggle).",
+          "Write the default-exported function component destructuring those props.",
+          "Inside the function body, add conditional logic in this order: if loading is true render a loading element; else if the songs array is empty render a \"no results\" message; otherwise map over the songs array rendering one <SongCard> per item, importing SongCard from \"@/components/song-card\".",
+          "Add the \"View All / Show Less\" button JSX below the grid, whose visible text depends on the showAll prop.",
+          "Save the file, then import SongsGrid into app/page.tsx and render it, passing empty/placeholder values for now."
+        ],
+        "needs": {
+          "props": [
+            "songs: Song[]",
+            "favorites: string[] (or Set<string>) — used to compute each card's isFavorite",
+            "onToggleFavorite: (videoId: string) => void",
+            "showAllSongs: boolean and onToggleShowAll: () => void (View All / Show Less)"
+          ],
+          "features": [
+            "Can stay a Server Component itself — it just maps song data into <SongCard> (a Client Component) as children"
+          ]
+        }
+      },
+      {
+        "text": "FavoritesSection — the #favorites section, toggled by the nav link.",
+        "why": "Same idea as SongsGrid, but reading from your favorites array/state instead of the search results array. Since it reuses SongCard, you'll see how the same component looks different depending on the isFavorite prop you pass it.",
+        "link": "https://react.dev/learn/conditional-rendering",
+        "steps": [
+          "Create a new file at components/favorites-section.tsx.",
+          "Define a props interface with fields for the favorites array and the favorite-toggle handler function.",
+          "Write the default-exported function component destructuring those two props.",
+          "Import SongCard from \"@/components/song-card\" and map over the favorites array rendering one <SongCard> per favorite, passing isFavorite={true} explicitly on each.",
+          "Add a short conditional message to render when the favorites array has zero items.",
+          "Save the file, then import and render <FavoritesSection /> from app/page.tsx (or from app/favorites/page.tsx if you choose Option B in Phase 8)."
+        ],
+        "needs": {
+          "props": [
+            "favorites: Song[] (the full favorited song objects, not just ids)",
+            "onToggleFavorite: (videoId: string) => void"
+          ],
+          "features": [
+            "If Favorites gets its own route (app/favorites/page.tsx, Option C), this can call useFavorites() directly instead of receiving props at all"
+          ]
+        }
+      },
+      {
+        "text": "Player — the sticky footer Now Playing bar.",
+        "why": "This one's a bit trickier because it needs to know what's playing even though the play button lives inside a completely different component (SongCard). That's a hint that 'now playing' state needs to live in a shared parent component (or Context) so both Player and SongCard can read/update it — this gets addressed properly in Phase 6. Since you've chosen Option C in Phase 8 (Home/Search/Favorites as separate pages), there's an extra wrinkle: Player has to live in app/layout.tsx, not inside any single page, because Next.js unmounts each page's own component when you navigate between routes, but keeps the shared layout mounted — putting Player in a page instead of the layout would cut off playback the moment you navigate away.",
+        "link": "https://react.dev/learn/sharing-state-between-components",
+        "steps": [
+          "Create a new file at components/player.tsx.",
+          "As the first line, type exactly: \"use client\";.",
+          "Define a props interface for whatever the currently-playing song info looks like (for example the song's title and artist, or the whole Song object) plus any play/pause boolean you want to expose.",
+          "Write the default-exported function component destructuring those props.",
+          "Build the sticky footer bar JSX, and add a condition at the top of the return statement so it renders nothing (or a minimal placeholder) when there's no current song.",
+          "Save the file, then import Player into app/layout.tsx (not into any individual page) and render it once, after the {children} expression, so it stays mounted and visible across Home, Search, and Favorites alike."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "\"use client\" (audio playback + onEnded handler)",
+            "useContext(NowPlayingContext) for the current track id + title/artist (see Phase 6)",
+            "useRef<HTMLAudioElement>(null) for the <audio> element"
+          ]
+        }
+      },
+      {
+        "text": "FloatingIcons — the decorative background emoji, purely presentational.",
+        "why": "No logic at all here — just JSX and CSS animation. Good candidate to leave as a Server Component since it never needs to respond to clicks or state changes.",
+        "link": "https://nextjs.org/docs/app/getting-started/server-and-client-components",
+        "steps": [
+          "Create a new file at components/floating-icons.tsx.",
+          "Add a default-exported function named FloatingIcons with no props.",
+          "Rewrite the HTML for the decorative background emoji/icons from your old markup as JSX inside its return statement (same structure, class= becomes className=).",
+          "Do not type \"use client\" in this file.",
+          "Save the file, then import and render <FloatingIcons /> from app/page.tsx or app/layout.tsx, positioned so it renders behind your other content."
+        ]
+      },
+      {
+        "text": "Mark every interactive component with \"use client\" — Hero and FloatingIcons can likely stay server components.",
+        "why": "This is the single biggest new concept coming from plain React: in the App Router, every component is a Server Component by default, meaning it renders on the server and ships zero JavaScript to the browser — which also means it CANNOT use useState, useEffect, onClick, or any browser API. Any component that needs interactivity must have the exact string \"use client\" as the very first line of the file. Forgetting this is the #1 beginner error and shows up as a build error telling you a hook or event handler was used in a Server Component.",
+        "link": "https://nextjs.org/docs/app/api-reference/directives/use-client",
+        "steps": [
+          "Open each component file you created in this phase one at a time: sidebar.tsx, hero.tsx, search-bar.tsx, song-card.tsx, songs-grid.tsx, favorites-section.tsx, player.tsx, floating-icons.tsx.",
+          "For each file, check whether it calls useState, useEffect, useRef, or useMemo, or whether it defines an onClick, onChange, or onSubmit handler directly in its JSX.",
+          "If yes, and \"use client\"; isn't already the first line, add it as the very first line, above any import statements.",
+          "Confirm hero.tsx and floating-icons.tsx do NOT have this line — they should stay Server Components.",
+          "Save every file you changed, then run npm run dev in your terminal.",
+          "Check both the browser page and the terminal for any red error message mentioning a hook or event handler used in a Server Component — it names the exact file still missing the directive."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 2.5: Add shadcn/ui",
+    "items": [
+      {
+        "text": "Run npx shadcn@latest init to set up shadcn/ui — creates components.json and rewrites globals.css with CSS-variable-based theme tokens.",
+        "why": "shadcn/ui isn't a typical component library you import from node_modules — the CLI copies real component source files directly into your project (usually into components/ui/), so you own and can edit every line yourself instead of being stuck with whatever a package author shipped. init needs App Router, TypeScript, Tailwind, and the @/* import alias already in place — all of which create-next-app already set up for you back in Phase 1.",
+        "link": "https://ui.shadcn.com/docs/installation/next",
+        "steps": [
+          "Confirm you're inside your project's root folder in the terminal (the folder with package.json).",
+          "Type the exact command: npx shadcn@latest init and press Enter.",
+          "When prompted for a style, pick the default option shown (press Enter to accept it if unsure).",
+          "When prompted for a base color, pick any option — you'll adjust actual colors in a later step.",
+          "Answer Yes if it asks about using CSS variables.",
+          "Once it finishes, confirm a new file named components.json now exists at the project root, and a new folder components/ui/ exists.",
+          "Open lib/utils.ts and confirm it now exports a function named cn."
+        ]
+      },
+      {
+        "text": "Understand how shadcn rewrites globals.css for Tailwind v4 — CSS variables in :root (and .dark) using oklch() colors, wrapped in an @theme inline block that maps them to Tailwind color tokens like --color-primary.",
+        "why": "This matters because you already added your own custom @theme block in Phase 9 for brand colors and animations. shadcn's init will add its own CSS variables and an @theme inline block alongside (not instead of) what you write — @theme inline is a slightly different form that references existing CSS variables rather than defining new raw values, so it's worth understanding before your file has two theme blocks in it.",
+        "link": "https://ui.shadcn.com/docs/tailwind-v4",
+        "steps": [
+          "Open app/globals.css in your code editor.",
+          "Scroll to find a :root { ... } block — read through the CSS custom property declarations inside it (they'll look like --primary: oklch(...);).",
+          "If a .dark { ... } block exists below it, note that it holds the same variable names with different values for dark mode.",
+          "Scroll further to find an @theme inline { ... } block and read how each line maps a Tailwind-facing name (like --color-primary) to one of the :root variables.",
+          "Compare this to your own @theme block from Phase 9 (if you've already written it) — confirm you now have two separate theme-related blocks, not one overwriting the other.",
+          "Add a short comment above each block (e.g. /* shadcn tokens */ and /* my brand tokens */) so it's clear which is which when you scroll through this file later."
+        ]
+      },
+      {
+        "text": "Reconcile shadcn's generated color tokens (--color-primary, --color-background, etc.) with your own brand palette from Phase 9 (--color-brand-purple, --color-brand-pink).",
+        "why": "Both are just CSS custom properties, so they coexist fine — you can either restyle shadcn's neutral defaults to use your purple/pink brand colors (edit the oklch() values in :root), or keep them separate and apply your brand colors as extra utility classes on top of shadcn's components. Deciding this once up front avoids fighting two color systems later.",
+        "steps": [
+          "Open a notes file and list your brand hex values from Phase 9 on one side and shadcn's generated token names on the other (like --primary, --background).",
+          "Decide one of two approaches and write down which one: (a) edit the oklch() values inside :root so shadcn's tokens use your brand colors, or (b) leave shadcn's tokens as-is and apply your own brand utility classes on top of its components.",
+          "If you picked (a), open globals.css and replace the oklch(...) values for the tokens you want to rebrand, saving and refreshing the browser to confirm the change.",
+          "If you picked (b), no file edit is needed yet — just keep your written decision handy for the next item."
+        ]
+      },
+      {
+        "text": "Add the specific components you need: npx shadcn@latest add button input select card — mapping to the search button/input, the sort dropdown, and the SongCard container.",
+        "why": "Each add command copies a ready-made, accessible component (built on Radix UI primitives under the hood) into components/ui/, plus installs whatever small Radix package it depends on. You only pull in the pieces you actually use — there's no giant all-in-one library import.",
+        "link": "https://ui.shadcn.com/docs/cli",
+        "steps": [
+          "In your terminal, inside the project root, type exactly: npx shadcn@latest add button input select card and press Enter.",
+          "Wait for it to finish installing.",
+          "Open the components/ui/ folder and confirm four new files now exist: button.tsx, input.tsx, select.tsx, and card.tsx.",
+          "Open button.tsx briefly and skim its contents just to see what a shadcn component file looks like — you'll be importing from these files directly."
+        ]
+      },
+      {
+        "text": "Swap the search input/button, sort <select>, and favorite/remove buttons over to the copied shadcn components from Phase 2.",
+        "why": "The native <select> in particular is worth replacing — shadcn's Select (built on Radix) gives you consistent, styleable dropdown behavior across browsers, which a plain <select> can't fully offer since its open dropdown is rendered by the OS, not by CSS you control.",
+        "steps": [
+          "Open components/search-bar.tsx.",
+          "Add an import line: import { Button } from \"@/components/ui/button\".",
+          "Add an import line: import { Input } from \"@/components/ui/input\".",
+          "Add an import line for the Select component and its sub-parts, checking shadcn's Select docs page for the exact sub-component names (SelectTrigger, SelectContent, SelectItem).",
+          "Replace your plain <input> element with <Input>, keeping the same props you already had on it.",
+          "Replace your plain <button> with <Button>, and your plain <select> with the Select component structure.",
+          "Save the file and run npm run dev, confirming the search bar still renders and functions before moving to the next file.",
+          "Repeat the same import-and-swap process in components/song-card.tsx for its favorite/remove button, replacing it with <Button>."
+        ]
+      },
+      {
+        "text": "Use the cn() helper shadcn generates in lib/utils.ts instead of adding clsx separately for combining conditional Tailwind classes (see Phase 9's Player bar item).",
+        "why": "shadcn's init already sets up lib/utils.ts with a cn() function that combines clsx with tailwind-merge. The tailwind-merge part is the extra value over plain clsx: if two conditional classes both set padding (e.g. p-4 and p-2), clsx would leave both in the string and let CSS specificity/order decide the winner, while cn() intelligently keeps only the last one — which avoids a subtle class-order bug that's easy to hit once you're combining a lot of conditional Tailwind classes.",
+        "link": "https://ui.shadcn.com/docs/installation/next",
+        "steps": [
+          "Open lib/utils.ts and confirm the line export function cn(...) (or similar) is present.",
+          "Open whichever file needs conditional classes — per the Why box, this will matter most in components/player.tsx once you reach Phase 9's Player bar item.",
+          "Add an import line at the top of that file: import { cn } from \"@/lib/utils\".",
+          "Where you'd otherwise write a manual template string switching classes based on a condition, call cn(...) instead, listing your base class names as plain strings followed by a conditional expression.",
+          "Don't run npm install clsx separately — cn() already has that dependency built in from shadcn's init."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 3: Port state from vanilla JS to React",
+    "items": [
+      {
+        "text": "currentSongs and displayedSongs → useState in the page/search component.",
+        "why": "In app.js these are just top-level 'let' variables anyone can mutate directly. In React, data that affects what's on screen has to go through useState so that calling the setter function tells React 're-render with this new value' — you already know this pattern from plain React, it's a direct port.",
+        "link": "https://react.dev/reference/react/useState",
+        "steps": [
+          "Open app/page.tsx.",
+          "If \"use client\"; isn't already the first line, add it.",
+          "Add (or extend) an import line: import { useState } from \"react\".",
+          "Inside your component function, add a state declaration for currentSongs, initialized to an empty array.",
+          "Add a second, separate state declaration the same way for displayedSongs.",
+          "Go through the rest of your component and find every place your old code reassigned these two variables directly — replace each with a call to the matching setter function instead.",
+          "Pass currentSongs (or displayedSongs, whichever your SongsGrid should render) down as a prop when you render <SongsGrid>."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState<Song[]>() for currentSongs / displayedSongs — lives in app/search/page.tsx under Option C"
+          ]
+        }
+      },
+      {
+        "text": "favorites → useState, initialized from localStorage inside a useEffect (not at module scope).",
+        "why": "This is the first real Next.js gotcha. Next.js pre-renders your page once on the server before sending it to the browser, and localStorage doesn't exist on a server — it's a browser-only API. Code that reads localStorage while the component is rendering will crash during that server render. useEffect only runs after the component has mounted in the actual browser, so that's the safe place to read it.",
+        "link": "https://react.dev/reference/react/useEffect",
+        "steps": [
+          "In the same file (or wherever you're managing this before moving it into a custom hook in Phase 4), add an import line for useEffect from \"react\" if it isn't already imported.",
+          "Add a state declaration for favorites, initialized to an empty array — do not put a localStorage read inside the useState() call itself.",
+          "Below your state declarations, add a useEffect call with an empty array [] as its second argument.",
+          "Inside that useEffect's function, read the saved value from localStorage using its key name, parse it, and call the favorites setter with the result.",
+          "Wrap that read-and-parse logic in a try/catch block so a missing or corrupted key doesn't crash the app.",
+          "Save the file, run npm run dev, and temporarily add a console.log of the favorites state to confirm (via the browser console) it starts empty and populates a moment after the page loads.",
+          "Remove that temporary console.log once you've confirmed it works."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState<number[]>() for favorites",
+            "useEffect() to read localStorage on mount (client-only)"
+          ]
+        }
+      },
+      {
+        "text": "showAllSongs (View All / Show Less toggle) → useState<boolean>.",
+        "why": "Direct 1:1 port of the existing boolean flag — nothing Next.js-specific here, just standard React state.",
+        "link": "https://react.dev/reference/react/useState",
+        "steps": [
+          "Add a new state declaration for showAllSongs, initialized to false.",
+          "Find your \"View All / Show Less\" button's click handler (or create one now if it doesn't exist yet).",
+          "Inside that handler, call the setter for showAllSongs with the opposite of its current value.",
+          "Pass showAllSongs down as a prop to <SongsGrid> so it can decide how many songs to display."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState<boolean>() for showAllSongs"
+          ]
+        }
+      },
+      {
+        "text": "currentSearch (text shown in the results message) → useState<string>.",
+        "why": "Same as above — this only existed so app.js could remember what to put in the results message string; in React you'd store it in state and interpolate it directly into JSX.",
+        "link": "https://react.dev/reference/react/useState",
+        "steps": [
+          "Add a new state declaration for currentSearch, initialized to an empty string.",
+          "Find wherever your search-submit logic runs (or will run once Phase 5 is done) and add a line there that calls the setter for currentSearch with the exact text the user typed.",
+          "In your results-message JSX (inside SongsGrid or wherever it's rendered), interpolate this currentSearch value into the message text."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState<string>() for currentSearch"
+          ]
+        }
+      },
+      {
+        "text": "Sort state (a-z / z-a / default) → useState, applied via useMemo instead of mutating in place.",
+        "why": "Your current handleSort calls displayedSongs.sort(...) directly, which mutates the array in place. React expects you to treat state as read-only — mutating it can cause React to miss that something changed and skip a re-render. useMemo lets you compute a freshly sorted copy of the array whenever the sort choice or song list changes, without ever mutating the original.",
+        "link": "https://react.dev/reference/react/useMemo",
+        "steps": [
+          "Add a new state declaration for the sort choice, initialized to the string \"default\" (matching the value already on your <select>'s default option).",
+          "Add (or extend) an import line for useMemo from \"react\".",
+          "Add a useMemo call whose dependency array lists your songs state and the sort-choice state.",
+          "Inside the useMemo's function, create a new array (for example using the spread operator to copy the original) and sort that new copy instead of the original array, choosing the sort logic based on the current sort-choice value.",
+          "Use the value returned by useMemo — not the raw state array — when passing songs down to <SongsGrid>.",
+          "Find your sort <select>'s onChange handler and have it call the setter for the sort-choice state with the selected value."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState() for the sort value",
+            "useMemo() to derive the sorted list instead of mutating state directly"
+          ]
+        }
+      },
+      {
+        "text": "Favorites-section visibility toggle → useState<boolean> or route-based if Favorites gets its own page.",
+        "why": "Right now toggleFavorites() just flips a CSS class. The React equivalent is a boolean in state that controls whether the section renders (or, if you pick Option B in Phase 8, a real separate page/route instead of a toggle).",
+        "link": "https://react.dev/reference/react/useState",
+        "steps": [
+          "If you're going with Option A from Phase 8, add a new state declaration for favorites visibility, initialized to false.",
+          "Find (or add) a click handler on the Sidebar's Favorites link and have it call the setter for this state, toggling its value.",
+          "In app/page.tsx's returned JSX, wrap your <FavoritesSection> in a condition that only renders it when this state is true.",
+          "If you're going with Option B instead, skip this item entirely — Phase 8 covers the routing version."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState<boolean>() — only needed under Option A/B; not needed at all under Option C since Favorites is its own route"
+          ]
+        }
+      },
+      {
+        "text": "Clear-button 'inactive' state → derive directly from the input value instead of toggling a class imperatively.",
+        "why": "handleInputChange currently manually adds/removes an 'inactive' class based on the input's value. In React the idiomatic approach is to compute this directly from state every render — e.g. disabled={searchValue.trim() === \"\"} — rather than imperatively reaching into the DOM to toggle a class. This 'derive, don't imperatively update' habit is the core mental shift from vanilla DOM manipulation to React.",
+        "link": "https://react.dev/learn/reacting-to-input-with-state",
+        "steps": [
+          "Find the state variable holding the current search input's text (declared earlier in this phase).",
+          "On your Clear button element, set its disabled prop (or whatever prop currently controls its \"inactive\" look) to a direct expression comparing that state value's trimmed length to zero — do not add a separate boolean state for this.",
+          "On the Clear button's onClick, call the setter for the search-text state with an empty string, and also reset currentSongs/displayedSongs to an empty array if that's part of your old Clear behavior.",
+          "Save and test by typing into the search box and confirming the Clear button's appearance updates automatically as you type, without any manual class-toggling code."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "No new state — derive directly from value.length === 0 on render"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "title": "Phase 4: Favorites persistence (localStorage)",
+    "items": [
+      {
+        "text": "Write a useFavorites() hook wrapping useState + a useEffect that reads localStorage on mount only.",
+        "why": "A 'custom hook' is just a regular function (whose name starts with 'use' by convention) that bundles together related state and logic so it can be reused. Wrapping the favorites state, the localStorage read, and the localStorage write into one useFavorites() hook keeps that logic in one place instead of scattered across components.",
+        "link": "https://react.dev/learn/reusing-logic-with-custom-hooks",
+        "steps": [
+          "Create a new folder at your project root named hooks (if it doesn't exist), and inside it create a new file named use-favorites.ts.",
+          "As the first line of that file, type exactly: \"use client\";.",
+          "Add import lines for useState and useEffect from \"react\".",
+          "Define and export a function named useFavorites with no parameters.",
+          "Inside it, add a useState declaration for the favorites array, initialized to empty.",
+          "Add a useEffect with an empty dependency array that reads and parses favorites from localStorage on mount, wrapped in a try/catch, calling the setter with the result.",
+          "Add a second useEffect whose dependency array contains the favorites state, and whose function writes the current favorites array back to localStorage using JSON.stringify.",
+          "At the end of the function, return an object (or array) containing the favorites state and a toggle function you write to add/remove a given videoId from the array.",
+          "Go back to app/page.tsx, delete the favorites-related useState/useEffect you added directly in Phase 3, and replace it with a single line calling useFavorites() and destructuring its return value."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState<string[]>() inside the hook",
+            "useEffect() to read from localStorage on mount",
+            "Hook returns something like { favorites, toggleFavorite }"
+          ]
+        }
+      },
+      {
+        "text": "Guard every localStorage access with a client-only check (useEffect naturally does this).",
+        "why": "Same server-rendering issue as before, worth repeating here: as long as every localStorage.getItem/setItem call happens inside a useEffect (which only runs in the browser), you're safe. If you ever see an error like 'localStorage is not defined', it means some code reached it outside a useEffect or client-only boundary.",
+        "link": "https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage",
+        "steps": [
+          "Use your editor's project-wide search (Ctrl+Shift+F or Cmd+Shift+F) to search for every occurrence of localStorage in your project.",
+          "For each result, check whether it's located inside a useEffect function body.",
+          "If any occurrence is directly inside a component's function body (not inside a useEffect), move that line inside a useEffect in the same file, adding one if none exists yet.",
+          "Save every file you changed and re-run npm run dev to confirm no \"localStorage is not defined\" error appears in the terminal."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useEffect() is the guard itself — it only runs client-side, after mount"
+          ]
+        }
+      },
+      {
+        "text": "Decide if favorites stay in localStorage long-term or move to a backend/DB later (not required now).",
+        "why": "Just a heads up for later — localStorage is per-browser, so favorites won't follow the user across devices. Not something you need to solve during this migration, just worth knowing as a limitation.",
+        "link": "https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage",
+        "steps": [
+          "Open your README.md or a project notes file.",
+          "Add a short section (a couple of sentences) noting that favorites are currently stored in localStorage, so they're per-browser and won't sync across devices.",
+          "If you already know you'll want a backend/database later, add one more sentence noting that as a planned future step — no code changes needed now."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 5: YouTube Search API calls",
+    "items": [
+      {
+        "text": "Set up a Next.js Route Handler at app/api/search/route.ts to proxy YouTube Data API v3 calls — required this time, not optional.",
+        "why": "Unlike the iTunes Search API, YouTube's Data API requires an API key on every request. If you called it directly from a client component, that key would sit in plain sight in your browser's network tab for anyone to copy and use against your own quota. A Route Handler is Next.js's built-in way to create your own backend endpoint right inside the project — any file named route.ts inside app/api/ runs only on the server, so the key stays hidden. (Your async Server Component, Hero, is the one exception — since it already only runs server-side, it's safe for it to call the YouTube API directly with the key inline, without going through this route.)",
+        "link": "https://nextjs.org/docs/app/getting-started/route-handlers",
+        "steps": [
+          "Get a free API key: create a project in the Google Cloud Console, enable the \"YouTube Data API v3\", and generate an API key under Credentials.",
+          "Add that key to a new .env.local file at your project root as YOUTUBE_API_KEY=your-key-here — never commit this file (confirm .env.local is already in your .gitignore).",
+          "Create a folder path app/api/search/ at your project root, and inside it create a file named exactly route.ts.",
+          "In that file, export an async function named GET that accepts a request parameter, reads the search term out of its URL's query string (using request.nextUrl.searchParams.get(\"q\")), calls fetch against https://www.googleapis.com/youtube/v3/search with part=snippet, type=video, your term, and process.env.YOUTUBE_API_KEY appended as query parameters, awaits the JSON response, and returns it using Next.js's Response.json(...) helper.",
+          "Restart npm run dev after adding the .env.local file — Next.js only reads environment variables at server startup."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "fetch() inside a Route Handler (app/api/search/route.ts) — required here so the API key never reaches the browser",
+            "process.env.YOUTUBE_API_KEY read server-side only"
+          ]
+        }
+      },
+      {
+        "text": "Rebuild handleSearch as an async function that sets a loading state instead of toggling a hidden class.",
+        "why": "Same async/await code you already know — the only change is that instead of loader.classList.remove(\"hidden\"), you'll set a isLoading state to true/false and use that to conditionally render the spinner in JSX.",
+        "link": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API",
+        "steps": [
+          "In whichever file holds your search logic (likely app/search/page.tsx), add a new state declaration for isLoading, initialized to false.",
+          "Write an async function named handleSearch that accepts the form submit event.",
+          "As its first line, call event.preventDefault().",
+          "Call the setter for isLoading with true.",
+          "Inside a try block, call fetch against your local /api/search route from the previous item (not directly to YouTube, since that would expose your API key) — then await the response and parse it with .json().",
+          "Before calling your songs-state setter, map over the raw response's items array, pulling item.id.videoId, item.snippet.title, item.snippet.channelTitle, and item.snippet.thumbnails.medium.url into the flatter Song shape your components expect — then call the setter with that mapped array.",
+          "Add a catch block that sets some kind of error/failure state (see the next item).",
+          "Add a finally block that calls the isLoading setter with false.",
+          "Wire this handleSearch function to your <form>'s onSubmit prop in search-bar.tsx (passed down as a prop from the parent, or defined locally if the form logic lives there).",
+          "In songs-grid.tsx, use the isLoading prop to conditionally render your loading/spinner element instead of removing a hidden class."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "useState<boolean>() for isLoading",
+            "async/await instead of .then() chains"
+          ]
+        }
+      },
+      {
+        "text": "Rebuild the 'no results' / 'enter a term' / 'API failed' messages as conditionally-rendered JSX.",
+        "why": "Instead of resultsMessage.textContent = \"...\", you'll return different JSX depending on state — usually with a ternary or a few early returns, e.g. {results.length === 0 ? <p>No songs found</p> : <SongsGrid songs={results} />}.",
+        "link": "https://react.dev/learn/conditional-rendering",
+        "steps": [
+          "Add a new state value (or a derived variable) representing which of three cases applies: no search term entered, zero results returned, or the fetch failed.",
+          "In the catch block from the previous item, set this value to the \"failed\" case.",
+          "After a successful fetch, check if the results array length is zero and set this value to the \"no results\" case if so; otherwise clear it.",
+          "In songs-grid.tsx's JSX, write a conditional expression (a ternary or a few early returns) that renders a different message element for each of the three cases, falling back to rendering the actual grid of songs when none apply."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "Conditional rendering driven by existing state — {isLoading && ...}, {error && ...}",
+            "useState<string | null>() for an error message"
+          ]
+        }
+      },
+      {
+        "text": "Rebuild getThumbnailUrl as a small utility function that picks a consistent thumbnail size out of YouTube's nested response (replaces getLargeArtwork).",
+        "why": "YouTube's response nests thumbnails as an object with a few fixed sizes (default, medium, high) rather than the single artworkUrl100 string iTunes gave you. This utility just picks one consistently (medium is a reasonable default) so the rest of your app can keep working with a single thumbnailUrl: string field, the same way it did before.",
+        "link": "https://developers.google.com/youtube/v3/docs/search/list",
+        "steps": [
+          "Decide on a location for shared utility functions — either the existing lib/utils.ts or a new file at lib/youtube.ts.",
+          "In that file, write and export a small function named getThumbnailUrl that accepts a raw YouTube search result item and returns item.snippet.thumbnails.medium.url (falling back to .default.url if medium isn't present).",
+          "Use this function inside the mapping step from the previous item, instead of accessing the nested thumbnails object directly wherever you build your Song objects.",
+          "In components/song-card.tsx, confirm the <img> element's src is set to song.thumbnailUrl (the already-flattened field), not a raw nested path."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 6: Audio player (Now Playing) logic",
+    "items": [
+      {
+        "text": "Replace per-song <audio> elements entirely with one shared YouTube player instance, controlled through Context.",
+        "why": "With iTunes previews, each SongCard would have owned its own <audio> element, and you'd have needed to manually pause every other one when a new song started. YouTube changes this for the better: instead of many <audio> tags, you create exactly ONE YT.Player instance for the whole app (via the YouTube IFrame Player API), and \"playing a different song\" just means calling that same player's loadVideoById(newVideoId) — there's nothing else to pause, since only one video can ever be loaded into it at a time. Since you chose Option C (Player living in app/layout.tsx, SongCard living inside separate page routes), that single player instance and the currently-playing info both need to be reachable from both places — which is exactly what React Context is for.",
+        "link": "https://developers.google.com/youtube/iframe_api_reference",
+        "steps": [
+          "Add the YouTube IFrame Player API script to your app once — the simplest way is <Script src=\"https://www.youtube.com/iframe_api\" strategy=\"afterInteractive\" /> from next/script, placed in app/layout.tsx.",
+          "Create a new file, context/now-playing-context.tsx, with \"use client\"; as its first line.",
+          "In that file, call createContext to make a NowPlayingContext, and write a NowPlayingProvider component that holds a ref for the player instance (useRef<any>(null) is fine here) plus state for the currently-playing videoId (initialized to null).",
+          "Inside NowPlayingProvider, add a useEffect that defines a global window.onYouTubeIframeAPIReady callback (the IFrame API calls this automatically once its script finishes loading) which constructs a new YT.Player, targeting a container div's id, and stores the resulting player object in your ref.",
+          "Render that container div somewhere inside NowPlayingProvider's JSX (it can be small or visually hidden with CSS — the IFrame API replaces it with the actual embedded player).",
+          "Wrap {children} in app/layout.tsx with this <NowPlayingProvider>, so every page and Player can reach the same player instance and state.",
+          "In song-card.tsx's play button click handler, call useContext(NowPlayingContext) to get the player ref and the setter for the currently-playing videoId, then call playerRef.current.loadVideoById(song.videoId) and update the state."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "createContext() + useContext() (new file: context/now-playing-context.tsx)",
+            "\"use client\" on the context file and every component that consumes it",
+            "A NowPlayingProvider component wrapping {children} in app/layout.tsx, holding a useRef to the single shared YT.Player instance",
+            "next/script to load the YouTube IFrame Player API once, in app/layout.tsx"
+          ]
+        }
+      },
+      {
+        "text": "Track the now-playing title/channel name in state and render it in the Player component.",
+        "why": "This is 'lifting state up' — a core React pattern, but taken one step further here. With Option A or B you could get away with a shared parent holding this state and passing it down as props to both Player and SongCard. With Option C, Player and SongCard aren't just separate components — they're on opposite sides of the layout/page boundary, so props alone can't connect them. The NowPlayingContext from the item above is what makes this possible: both components read and update the same value through it instead of Player trying to reach into SongCard's internals.",
+        "link": "https://react.dev/learn/sharing-state-between-components",
+        "steps": [
+          "In the same context/now-playing-context.tsx file, extend the Context's value to also hold the current song's title/channelTitle (or the whole Song object), not just the videoId, initialized to null.",
+          "In song-card.tsx's play handler, call the Context's setter to store the song that just started playing, alongside updating the currently-playing videoId.",
+          "In components/player.tsx, call useContext(NowPlayingContext) instead of expecting a prop, and destructure the now-playing song info from it.",
+          "Render the title/channel name inside the sticky bar's JSX, using the condition from Phase 2's Player item to show nothing when the value is null."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "Extend the same NowPlayingContext value to also hold title/artist, not just the track id",
+            "useContext(NowPlayingContext) in Player instead of a prop"
+          ]
+        }
+      },
+      {
+        "text": "Use the player's onStateChange event instead of addEventListener to detect when a song ends.",
+        "why": "There's no onEnded JSX prop anymore, since there's no <audio> element — instead, the YouTube IFrame Player API reports state changes (playing, paused, ended, etc.) through an event handler you register once, when you construct the YT.Player instance. You'll register this in the same place you created the player in the first item of this phase, checking for event.data === YT.PlayerState.ENDED, rather than attaching/removing a listener on every render the way vanilla addEventListener would.",
+        "link": "https://developers.google.com/youtube/iframe_api_reference#Events",
+        "steps": [
+          "Open context/now-playing-context.tsx and find where you construct the new YT.Player instance.",
+          "Add an events property to the YT.Player configuration object, with an onStateChange field pointing to a handler function.",
+          "Inside that handler, check if event.data === window.YT.PlayerState.ENDED, and if so, call the setter for the currently-playing videoId (and title/channel state) with null, so the Player bar clears.",
+          "Delete any leftover addEventListener(\"ended\", ...) code from the old vanilla version — it doesn't apply here at all anymore, since there's no <audio> element for it to attach to."
+        ],
+        "needs": {
+          "props": [],
+          "features": [
+            "onStateChange handler passed into the YT.Player configuration object (registered once, not a JSX prop)",
+            "Checking event.data === YT.PlayerState.ENDED"
+          ]
+        }
+      },
+      {
+        "text": "Keep key={song.videoId} on each SongCard — good practice, though lower-stakes now that there's only one shared player.",
+        "why": "With per-song <audio> elements, an unstable key could cause React to unmount and remount the wrong <audio> element, cutting off playback. Since there's now only one shared YT.Player instance living in Context — not one per SongCard — that specific failure mode goes away. The key prop is still worth keeping correct as general React best practice (it's how React tracks which list item is which across re-renders, sorting, and filtering); it's just no longer protecting live audio playback the way it did with per-card <audio> tags.",
+        "link": "https://react.dev/learn/rendering-lists",
+        "steps": [
+          "Open components/songs-grid.tsx and find the line where you .map() over your songs array to render <SongCard> elements.",
+          "Confirm (or add) a key prop on each <SongCard>, setting it to song.videoId exactly — not the map callback's index parameter.",
+          "Repeat the same check in components/favorites-section.tsx for its own .map() over the favorites array.",
+          "Optional: since there's only one shared player now, playback interruption from key issues is much less likely than before — but it's still worth confirming that changing sort/filter doesn't produce any console warnings about missing/duplicate keys."
+        ],
+        "needs": {
+          "props": [
+            "key={song.videoId} on each SongCard inside the .map()"
+          ],
+          "features": []
+        }
+      }
+    ]
+  },
+  {
+    "title": "Phase 7: Icons (Font Awesome)",
+    "items": [
+      {
+        "text": "Remove the Font Awesome kit script (kit.fontawesome.com/...) — it causes hydration mismatches in Next.js.",
+        "why": "That kit script works by scanning the page after load and replacing <i> tags with SVG icons — but it does this by directly rewriting the DOM outside of React. Next.js expects the DOM in the browser to exactly match what React rendered on the server; when a script reaches in and changes it, you'll often see a 'Hydration failed' warning in the console. This is a very common issue when porting jQuery-style or vanilla widgets into a React/Next.js app.",
+        "link": "https://nextjs.org/docs/messages/react-hydration-error",
+        "steps": [
+          "Open app/layout.tsx and use your editor's find feature (Ctrl+F) to search for kit.fontawesome.com.",
+          "If you find a <script src=\"https://kit.fontawesome.com/...\"> tag, delete that entire line.",
+          "Use your editor's project-wide search to check every other file for the same kit.fontawesome.com URL and delete any remaining references.",
+          "Save all changed files, run npm run dev, and open your browser's console to confirm no hydration-related warning mentions Font Awesome anymore."
+        ]
+      },
+      {
+        "text": "Install @fortawesome/react-fontawesome + the solid/brands icon packages and swap <i class=\"fa-...\"> for <FontAwesomeIcon>.",
+        "why": "This package gives you real React components (<FontAwesomeIcon icon={faMusic} />) that render as part of React's own tree, so there's no outside script fighting with React over the DOM — problem solved at the source instead of worked around.",
+        "link": "https://docs.fontawesome.com/web/use-with/react/use-with",
+        "steps": [
+          "In your terminal, type: npm install @fortawesome/react-fontawesome @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/free-brands-svg-icons and press Enter.",
+          "Open components/sidebar.tsx (and any other file using an <i className=\"fa-...\"> element).",
+          "Add an import line pulling the specific icon you need (for example faMusic) from the matching package (free-solid-svg-icons for solid icons, free-brands-svg-icons for brand logos).",
+          "Add an import line for the FontAwesomeIcon component itself from @fortawesome/react-fontawesome.",
+          "Replace each <i className=\"fa-...\"> element with a <FontAwesomeIcon icon={...} /> element, passing in the icon you imported.",
+          "Repeat for every remaining <i className=\"fa-...\"> element across the project (use a project-wide search for fa- to find them all)."
+        ]
+      },
+      {
+        "text": "Alternatively use react-icons for a simpler API.",
+        "why": "react-icons bundles icons from several icon sets (including Font Awesome's) as plain React components with one install, which some people find simpler than managing separate Font Awesome packages per icon style (solid/brands/etc.).",
+        "link": "https://react-icons.github.io/react-icons/",
+        "steps": [
+          "In your terminal, type: npm install react-icons and press Enter.",
+          "Open the react-icons documentation site and search for the equivalent of each Font Awesome icon you currently use (for example the music note logo).",
+          "Note the exact family subpath shown for each icon (for example react-icons/fa6) and the exact component name (for example FaMusic).",
+          "In components/sidebar.tsx (and any other file with an old <i className=\"fa-...\"> element), add an import line for the matching icon component from its family subpath.",
+          "Replace each <i className=\"fa-...\"> element with the imported icon component, used as a self-closing JSX element."
+        ]
+      },
+      {
+        "text": "If the kit script must stay for some reason, load it with next/script (strategy=\"afterInteractive\") as a last resort.",
+        "why": "next/script is Next.js's own component for loading third-party scripts, and 'afterInteractive' delays it until after the page is usable, which reduces (but doesn't fully eliminate) hydration mismatch risk. Only reach for this if you have a real reason to keep the kit script — the package-based approach above is strongly preferred.",
+        "link": "https://nextjs.org/docs/app/api-reference/components/script",
+        "steps": [
+          "Only do this step if you've deliberately decided to keep the kit script rather than converting to one of the two options above.",
+          "Open app/layout.tsx and add an import line: import Script from \"next/script\".",
+          "Replace the raw <script src=\"...\"> tag with <Script src=\"...\" strategy=\"afterInteractive\" />, keeping the same URL.",
+          "Save and test thoroughly, opening the browser console to check for hydration warnings, since this approach doesn't fully guarantee they're gone."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 8: Routing decisions",
+    "items": [
+      {
+        "text": "Option A: keep it a single page with in-page scroll anchors and a state-toggled Favorites section (least change).",
+        "why": "This mirrors what you have today almost exactly — one page, anchor links that scroll to sections, and a boolean state flag that shows/hides Favorites. Least amount of restructuring, good if you want to focus your learning energy on the other phases first.",
+        "link": "https://react.dev/learn/conditional-rendering",
+        "steps": [
+          "Confirm you already added the Favorites-visibility boolean state from Phase 3, item 6.",
+          "Keep all your sections — Hero, SongsGrid, FavoritesSection — rendered together inside the single app/page.tsx return statement.",
+          "Wrap <FavoritesSection> in a condition using that boolean state so it only renders when true.",
+          "Leave your anchor links (#home, #search, #favorites) as plain <a> elements for scrolling — these don't need next/link."
+        ]
+      },
+      {
+        "text": "Option B: give Favorites its own route (app/favorites/page.tsx) with real next/link navigation.",
+        "why": "In the App Router, routing is folder-based: any folder under app/ that contains a page.tsx file automatically becomes a real URL route — no router configuration needed, unlike some other frameworks. Putting Favorites at app/favorites/page.tsx gives it a real, shareable URL (yoursite.com/favorites) instead of a scroll-and-toggle.",
+        "link": "https://nextjs.org/docs/app/api-reference/file-conventions/page",
+        "steps": [
+          "Create a new folder at app/favorites/ and inside it a file named exactly page.tsx.",
+          "In that new page.tsx, add \"use client\"; as the first line if the section needs client-side state (it likely does, since it reads favorites).",
+          "Import your useFavorites hook and the FavoritesSection component into this new file.",
+          "Call useFavorites() inside this page component and pass its result down as props to <FavoritesSection>.",
+          "Remove the FavoritesSection rendering from app/page.tsx if it's still there.",
+          "Run npm run dev, navigate your browser to localhost:3000/favorites directly, and confirm the section renders correctly on its own."
+        ]
+      },
+      {
+        "text": "Option C (chosen): give Home, Search, and Favorites each their own real route — app/page.tsx, app/search/page.tsx, and app/favorites/page.tsx.",
+        "why": "This is the most restructuring of the three options, but the cleanest long-term: every section becomes a real, shareable, bookmarkable URL instead of a scroll position or a toggled boolean. It also simplifies your state — Search's results no longer need to be 'shared' with anything else, since the Search page can just own that state locally instead of lifting it up to be visible from Home or Favorites too. The one thing this changes elsewhere: Player must move into app/layout.tsx instead of any single page (see Phase 2's Player item) so it keeps playing across navigation instead of unmounting every time you switch sections.",
+        "link": "https://nextjs.org/docs/app/api-reference/file-conventions/page",
+        "steps": [
+          "Keep app/page.tsx as the Home page — it should render Hero (and FloatingIcons, if you're placing it there) and nothing else from Search or Favorites.",
+          "Create a new folder app/search/ with a file named exactly page.tsx inside it; add \"use client\"; as the first line since it will own search state.",
+          "Move the SearchBar and SongsGrid rendering (and the search-related state and handlers from Phase 3/5) out of app/page.tsx and into this new app/search/page.tsx.",
+          "Create a new folder app/favorites/ with a file named exactly page.tsx inside it; add \"use client\"; as the first line.",
+          "Move the FavoritesSection rendering into this new app/favorites/page.tsx, calling your useFavorites() hook directly inside it.",
+          "Run npm run dev and confirm all three URLs work directly: localhost:3000/, localhost:3000/search, and localhost:3000/favorites."
+        ]
+      },
+      {
+        "text": "Replace the nav links' behavior for whichever routing option you picked: state setters (Option A), next/link for Favorites only (Option B), or next/link for Home/Search/Favorites (Option C).",
+        "why": "next/link is Next.js's component for client-side navigation between routes — it swaps the page content without a full browser reload (faster, preserves things like scroll position better), unlike a plain <a href=\"...\"> tag which reloads the whole page.",
+        "link": "https://nextjs.org/docs/app/getting-started/linking-and-navigating",
+        "steps": [
+          "If you picked Option A: open components/sidebar.tsx, find the Favorites link element, change it from an <a href=\"#favorites\"> to a <button> element (or keep the anchor for scroll and add a separate onClick), and wire its onClick to call the visibility-boolean setter passed down as a prop.",
+          "If you picked Option B: open components/sidebar.tsx, add an import line: import Link from \"next/link\", and replace just the <a href=\"#favorites\"> element with <Link href=\"/favorites\">, keeping the same inner text/classes.",
+          "If you picked Option C: open components/sidebar.tsx, add an import line: import Link from \"next/link\", and replace all three anchor elements — Home, Search, and Favorites — with <Link href=\"/\">, <Link href=\"/search\">, and <Link href=\"/favorites\"> respectively, keeping each one's inner text/classes.",
+          "Save the file, run npm run dev, and click each nav link to confirm it navigates to the right page for whichever option you picked."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 9: Convert CSS to Tailwind (v4 — CSS-based @theme, not tailwind.config.js)",
+    "items": [
+      {
+        "text": "Global background gradient (body radial-gradient) → custom class in globals.css or Tailwind arbitrary-value bg-[radial-gradient(...)].",
+        "why": "Tailwind's 'arbitrary value' syntax — square brackets after a utility name — lets you drop in any raw CSS value for the rare cases where there's no matching built-in utility. bg-[radial-gradient(circle_at_top_left,...)] works, though for something this long, a small custom class in globals.css is arguably more readable.",
+        "link": "https://tailwindcss.com/docs/adding-custom-styles",
+        "steps": [
+          "Open your old style.css and find the body { background: radial-gradient(...); } rule, copying its exact gradient values somewhere you can reference them.",
+          "Decide between an arbitrary-value utility (typed directly in a className, like bg-[radial-gradient(circle_at_top_left,...)]) or a small custom class added to globals.css.",
+          "Open app/layout.tsx and find the element that wraps your whole page background (likely the <body> tag).",
+          "Apply your chosen utility class (or custom class name) to that element's className.",
+          "Save, run npm run dev, and visually compare the background to the old version.",
+          "Once confirmed matching, delete the original body { background: ... } rule from style.css."
+        ]
+      },
+      {
+        "text": "Pull repeated custom colors (#8b5cf6, #ec4899, #c4b5fd, #b8addd, #f8f7ff, #080012) into an @theme block in globals.css as --color-* variables.",
+        "why": "Heads up: Tailwind is currently on v4, which changed this from the older tailwind.config.js approach. Instead of a JS config file, you now register design tokens directly in CSS: @theme { --color-brand-pink: #ec4899; }. That automatically generates bg-brand-pink, text-brand-pink, etc. — same idea as v3's theme.extend.colors, just written in CSS instead of JavaScript. If you see older tutorials mentioning tailwind.config.js, that's the v3 way.",
+        "link": "https://tailwindcss.com/docs/theme",
+        "steps": [
+          "Open app/globals.css.",
+          "If shadcn's init already added an @theme inline block (Phase 2.5), add your own separate @theme { ... } block below it rather than editing shadcn's block.",
+          "Inside your @theme block, add one line per repeated brand color, in the form --color-brand-name: #hexvalue; for each of your six repeated hex values, naming each one descriptively (for example --color-brand-pink, --color-brand-purple).",
+          "Save the file, then use your editor's project-wide search to find every place a hardcoded hex value like #ec4899 appears in your component className strings.",
+          "Replace each hardcoded color usage with the generated utility class name (for example bg-brand-pink or text-brand-pink), one file at a time, checking the browser after each change."
+        ]
+      },
+      {
+        "text": "Add custom keyframe animations (spin, fadeUp, floatUp) as --animate-* variables + @keyframes inside the same @theme block.",
+        "why": "Tailwind ships a few built-in animations (animate-spin, animate-pulse, animate-bounce) but your fadeUp and floatUp animations are custom, so in v4 you define them directly in CSS: --animate-fade-up: fade-up 400ms ease both; followed by a @keyframes fade-up { ... } block, both inside @theme. That gives you an animate-fade-up class to use. animate-spin already covers your loader, so that one's free.",
+        "link": "https://tailwindcss.com/docs/theme",
+        "steps": [
+          "In the same @theme block from the previous item, add two lines: --animate-fade-up: fade-up 400ms ease both; and a matching --animate-float-up line (using your existing animation timing values).",
+          "Below the closing brace of the @theme block, add a @keyframes fade-up { ... } rule and a @keyframes float-up { ... } rule, copying the exact from/to percentage values from your old style.css.",
+          "Use your editor's project-wide search to find every element using the old fadeUp/floatUp CSS animation names, and replace those references with the new animate-fade-up / animate-float-up utility classes.",
+          "Leave your loader's spin animation using Tailwind's built-in animate-spin class — do not add a custom entry for it."
+        ]
+      },
+      {
+        "text": "Sidebar / nav (sticky, backdrop-blur, translucent bg, border) → mostly 1:1 Tailwind utilities.",
+        "why": "This section translates almost word-for-word: position: sticky → sticky, backdrop-filter: blur() → backdrop-blur-xl, a semi-transparent background → bg-[#080012]/85. A good section to practice reading CSS and finding its Tailwind equivalent.",
+        "link": "https://tailwindcss.com/docs/styling-with-utility-classes",
+        "steps": [
+          "Open components/sidebar.tsx.",
+          "Find the position: sticky rule in your old CSS for this section and add the sticky utility class to the corresponding element's className.",
+          "Find the backdrop-filter: blur(...) rule and add a matching backdrop-blur-xl (or the closest Tailwind size) utility class.",
+          "Find the semi-transparent background color and replace it with a utility like bg-[#080012]/85 (adjust the hex and opacity to match your exact values).",
+          "Find the border rule and add the matching border and border-color utility classes.",
+          "Save and visually compare against the old version in your browser before moving to the next component."
+        ]
+      },
+      {
+        "text": "Hero title clamp(42px, 7vw, 84px) → arbitrary value text-[clamp(42px,7vw,84px)] or a fluid-type plugin. Also give the whole Hero more vertical breathing room now that it holds more content (CTA, chips, featured song).",
+        "why": "Tailwind doesn't wrap every possible CSS feature — clamp() for fluid font sizing is one of the gaps. The arbitrary-value syntax bridges it directly, or you could add a plugin that generates fluid type scales if you end up needing this pattern often. Separately, since Hero grew to include a CTA, chips, and a featured song card, its old padding values (sized for just three lines of text) will likely look cramped — this is the point to revisit that spacing.",
+        "link": "https://tailwindcss.com/docs/adding-custom-styles",
+        "steps": [
+          "Open components/hero.tsx and find the title element (likely an <h2>).",
+          "Add the utility class text-[clamp(42px,7vw,84px)] to its className, replacing the old CSS clamp() rule (adjust the numbers if your original values differ).",
+          "Save, then resize your browser window narrower and wider while watching the title to confirm it scales fluidly between the two size limits.",
+          "On the outer Hero container, increase vertical padding (e.g. py-20 or py-24 instead of whatever smaller value it had) and consider a min-h-[...] utility so the section fills more of the initial viewport now that it holds the CTA, chips, and featured song too.",
+          "Add spacing utilities (gap-6, gap-8, or margin utilities between each new piece) so the CTA button, chip row, and featured song card don't feel cramped against each other."
+        ]
+      },
+      {
+        "text": "Search input / buttons / sort select (pill shapes, gradients, hover lift) → rounded-full + gradient utilities.",
+        "why": "Fully-rounded pill shapes become rounded-full, your two-color gradient buttons become bg-gradient-to-br from-violet-500 to-pink-500, and the hover 'lift' effect becomes hover:-translate-y-0.5 transition. Very direct translations once you know the utility names.",
+        "link": "https://tailwindcss.com/docs/styling-with-utility-classes",
+        "steps": [
+          "Open components/search-bar.tsx.",
+          "Add rounded-full to the input, both buttons, and the select element's className.",
+          "Add a gradient utility like bg-gradient-to-br from-violet-500 to-pink-500 to your button elements, adjusting the color stops to match your exact brand colors from item 2 above.",
+          "Add hover:-translate-y-0.5 and transition (or transition-transform) to the same buttons to reproduce the hover-lift effect.",
+          "Save and hover over each button in the browser to confirm the lift animation works."
+        ]
+      },
+      {
+        "text": "Song grid (auto-fit minmax + custom scrollbar) → grid-cols-[repeat(auto-fit,minmax(220px,1fr))]; scrollbar needs a plugin or small custom CSS.",
+        "why": "The responsive auto-fit grid maps directly to an arbitrary grid-template-columns value. Custom scrollbar styling (::-webkit-scrollbar) has no Tailwind core utilities at all — it's considered too niche/browser-specific — so you'll need either the tailwind-scrollbar plugin or to just keep that one small chunk of plain CSS.",
+        "link": "https://github.com/adoxography/tailwind-scrollbar",
+        "steps": [
+          "Open components/songs-grid.tsx and find the grid container element.",
+          "Add the utility class grid-cols-[repeat(auto-fit,minmax(220px,1fr))] (or your exact original minmax values) to its className, along with grid and gap-* utilities matching your old spacing.",
+          "Decide whether to add the tailwind-scrollbar plugin (npm install -D tailwind-scrollbar and register it per its README) or keep the ::-webkit-scrollbar rule as plain CSS in globals.css, scoped to a specific class name.",
+          "Apply whichever scrollbar approach you picked to the scrolling container and confirm it looks the same as before."
+        ]
+      },
+      {
+        "text": "Song card nth-child animation delays → keep as small inline style since Tailwind can't express nth-child selectors.",
+        "why": "Tailwind is class-based utility CSS — it has no mechanism for 'style the 3rd child differently.' For this handful of per-card animation delays, a plain inline style={{ animationDelay: `${index * 60}ms` }} is the normal, accepted answer, not a workaround you should feel bad about.",
+        "link": "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/style",
+        "steps": [
+          "Open components/songs-grid.tsx where you .map() over songs to render <SongCard> elements.",
+          "On the wrapping element around each SongCard (or on SongCard itself if it accepts a style prop), add an inline style prop setting animationDelay to a value based on the current index in the .map() callback, multiplied by your original per-card delay (for example 60ms).",
+          "Save and confirm the staggered entrance animation still looks the same as your old nth-child version when the results first render."
+        ]
+      },
+      {
+        "text": "Player bar sticky + active-state gradient → sticky bottom-0 with conditional classes driven by playing state.",
+        "why": "Since the 'active' look now depends on React state (is something playing?) rather than a manually toggled CSS class, you'll combine Tailwind classes conditionally. Since you're adding shadcn/ui (Phase 2.5), you'll already have its cn() helper in lib/utils.ts for this — cn(\"sticky bottom-0\", isPlaying && \"border-pink-500/45 shadow-lg\") — no need to install clsx separately as a plain project would.",
+        "link": "https://github.com/lukeed/clsx",
+        "steps": [
+          "Open components/player.tsx.",
+          "Add sticky bottom-0 to the bar's outer container className, plus a z-index utility (like z-50) if it needs to sit above other content.",
+          "Add the import line: import { cn } from \"@/lib/utils\".",
+          "Replace the className string on that container with a cn(...) call, listing your base classes as the first arguments and a conditional expression (based on your \"is something playing\" state or prop) as the last argument, applying the border/shadow classes only when true.",
+          "Save, start playing a song, and confirm the active-state styling appears and disappears correctly as playback starts/stops."
+        ]
+      },
+      {
+        "text": "Responsive breakpoint at 700px → map to Tailwind's md: (768px), or define a custom --breakpoint-* variable in the @theme block to match 700px exactly.",
+        "why": "Tailwind's responsive prefixes (sm:, md:, lg:) are mobile-first breakpoints with their own default pixel values, and md: (768px) doesn't exactly match your current 700px cutoff. Close enough usually doesn't matter visually, but if you want an exact match, v4 lets you define your own breakpoint as a --breakpoint-* variable inside @theme (the CSS-based equivalent of v3's theme.extend.screens).",
+        "link": "https://tailwindcss.com/docs/responsive-design",
+        "steps": [
+          "Decide whether Tailwind's built-in md: prefix (768px) is close enough to your old 700px cutoff, or whether you want an exact match.",
+          "If close enough is fine, skip straight to replacing your old @media (min-width: 700px) rules with md: prefixed utility classes on the relevant elements.",
+          "If you want an exact match, open globals.css, and inside your @theme block add a line: --breakpoint-custom: 700px; (name it whatever you like).",
+          "Use the resulting custom: prefix (matching whatever name you chose) on the elements that previously used the 700px media query.",
+          "Test by resizing your browser window across the 700px width and confirming the layout switches at the same point as before."
+        ]
+      },
+      {
+        "text": "Delete style.css and its <link> once every section is ported.",
+        "why": "This is your milestone marker for 'the CSS conversion is actually done' — once nothing references the old stylesheet and the site still looks right, you know every rule has been accounted for somewhere in Tailwind classes or the @theme block in globals.css.",
+        "link": "https://nextjs.org/docs/app/getting-started/css",
+        "steps": [
+          "Open style.css and go through it top to bottom, confirming each remaining rule has already been ported to a Tailwind utility or into your @theme block in one of the previous ten items.",
+          "Once nothing is left unaccounted for, delete the style.css file from your project.",
+          "Search your project (particularly app/layout.tsx or any old HTML you copied from) for a <link> tag or import statement referencing style.css and delete it.",
+          "Run npm run dev, reload the page, and visually compare it side by side with a screenshot of the old site to confirm nothing looks different."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 10: Images",
+    "items": [
+      {
+        "text": "Use next/image for YouTube thumbnails and add i.ytimg.com to images.remotePatterns in next.config.js.",
+        "why": "Unlike iTunes artwork, which came from several numbered, unpredictable subdomains, YouTube thumbnails are served from one stable, predictable host — i.ytimg.com. That makes the next/image allowlist genuinely easy this time, so there's no real reason to avoid it.",
+        "link": "https://nextjs.org/docs/app/api-reference/components/image",
+        "steps": [
+          "Open next.config.js (or next.config.ts) at your project root.",
+          "Inside the config object, add an images key with a remotePatterns array, and add an entry matching hostname: \"i.ytimg.com\".",
+          "In components/song-card.tsx, add an import line: import Image from \"next/image\".",
+          "Replace the <img> element with <Image>, adding the required width and height props (or a fill prop with a positioned parent container) since next/image needs explicit sizing.",
+          "Save, run npm run dev, and confirm thumbnail images load without a \"hostname not configured\" error in the console."
+        ]
+      },
+      {
+        "text": "Optional: fall back to a plain <img> tag only if you skip next/image entirely for simplicity — not required this time.",
+        "why": "This was a bigger deal with iTunes, where the CDN subdomains varied unpredictably enough to make the next/image allowlist annoying to maintain. YouTube's single stable thumbnail host removes that problem, so there's no strong reason to avoid next/image here — this item is really just an escape hatch if you'd rather skip image optimization for now and come back to it later.",
+        "link": "https://nextjs.org/docs/app/api-reference/config/next-config-js/images",
+        "steps": [
+          "If you'd rather not deal with next/image configuration right now, leave the <img> element in components/song-card.tsx exactly as it is.",
+          "Confirm its src prop is set to song.thumbnailUrl.",
+          "Confirm its alt prop is set to something meaningful, like the song's title, rather than left blank."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 11: Metadata / SEO",
+    "items": [
+      {
+        "text": "Replace the <title> and <meta> tags with a metadata export in app/layout.tsx (Next.js Metadata API).",
+        "why": "Instead of writing raw <title> and <meta> tags in an HTML <head> yourself, the App Router wants you to export a metadata object (or a generateMetadata function for dynamic values) from layout.tsx or page.tsx, and Next.js injects the correct tags into the page automatically.",
+        "link": "https://nextjs.org/docs/app/getting-started/metadata-and-og-images",
+        "steps": [
+          "Open app/layout.tsx.",
+          "Find (or add) your import line from \"next\" and include both Metadata and Viewport in the type import (for example: import type { Metadata, Viewport } from \"next\";).",
+          "Below your imports, add: export const metadata: Metadata = { ... }, filling in a title field, a description field, and an openGraph object mirroring your old <meta> tags.",
+          "If you need a theme color, add a separate export: export const viewport: Viewport = { themeColor: \"#yourcolor\" }; — do not put themeColor inside the metadata object.",
+          "Search your old HTML for any remaining raw <title> or <meta> tags and confirm they're no longer needed since Next.js now generates them from this export.",
+          "Save, run npm run dev, and use your browser's \"View Page Source\" to confirm the generated <title> and <meta> tags match what you expect."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 12: Cleanup and parity check",
+    "items": [
+      {
+        "text": "Do a side-by-side parity pass: search, sort, clear, view all/show less, favorite/remove, favorites count, now-playing bar, external links.",
+        "why": "Before deleting the old site, actually click through every feature on both versions side by side. It's easy to port 90% of an app faithfully and not notice one small behavior (like the clear button re-enabling, or the favorites count updating) quietly broke somewhere along the way.",
+        "steps": [
+          "Open your old vanilla site in one browser tab and your new Next.js site (via npm run dev) in another tab, side by side if your screen allows it.",
+          "Make a simple checklist on paper or in a notes file listing: search, sort, clear, view all/show less, favorite/remove, favorites count, now-playing bar, external links.",
+          "Click through each item on the old site first, noting exactly what happens.",
+          "Click through the same item on the new site and compare.",
+          "For anything that differs or is missing, write down which item and what specifically is wrong.",
+          "Fix each written-down issue in its relevant component file before moving to the next item in this phase."
+        ]
+      },
+      {
+        "text": "Delete (or move to /legacy) the old index.html, app.js, style.css once parity is confirmed.",
+        "why": "Keeping dead files around after they're no longer used tends to confuse whoever opens the repo next (including future you) about which code is actually live. Moving them to a /legacy folder briefly is a safer middle ground than deleting outright if you want a quick reference during the transition.",
+        "steps": [
+          "Confirm every issue from the parity pass above has been fixed and re-tested.",
+          "Decide whether to delete index.html, app.js, and style.css outright, or move them into a new folder.",
+          "If moving, create a folder named legacy at your project root and move those three files into it.",
+          "Run npm run dev again afterward and confirm the app still works with those files out of their original location."
+        ]
+      },
+      {
+        "text": "Update README.md with new setup instructions (npm install, npm run dev).",
+        "why": "Your current README is a single line. Once the setup process changes from 'open index.html' to 'npm install && npm run dev', anyone (including you in six months) needs those instructions written down.",
+        "link": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
+        "steps": [
+          "Open (or create) README.md at your project root.",
+          "Delete the old single-line content.",
+          "Add a \"Getting Started\" section listing, in order: cloning the repository, running npm install, and running npm run dev.",
+          "Mention your Node.js version if you know it matters (check with node -v in your terminal), and list any environment variables from Phase 5 if you added a Route Handler needing one.",
+          "Save the file."
+        ]
+      },
+      {
+        "text": "Run npm run lint and npm run build locally to catch hydration warnings or type errors.",
+        "why": "npm run dev is forgiving and won't always surface every problem. Running an actual production build locally catches things like hydration mismatches, unused variables, or type errors that only show up under stricter checks — much better to find these before deploying than after.",
+        "link": "https://eslint.org/docs/latest/use/getting-started",
+        "steps": [
+          "In your terminal, type npm run lint and press Enter.",
+          "Read through every warning or error it prints, opening the referenced file and line for each one.",
+          "Fix each one directly in the code, or add a targeted comment to silence a specific false positive if you're confident it is one.",
+          "Once lint is clean, type npm run build and press Enter.",
+          "Watch the terminal output for any hydration warning, type error, or failed page during the build.",
+          "Fix anything reported before considering the migration complete, then re-run npm run build to confirm it now completes without errors."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Phase 13: Deployment",
+    "items": [
+      {
+        "text": "Deploy to Vercel (or host of choice) — confirm next build works with no required environment variables.",
+        "why": "Vercel is built by the same team as Next.js, so deploying a standard Next.js app there is close to zero-config — connect the repo and it detects everything automatically. Since this app has no API keys or secrets, there's nothing extra to configure before your first deploy.",
+        "link": "https://vercel.com/docs/frameworks/full-stack/nextjs",
+        "steps": [
+          "Confirm your nextjs-migration branch is pushed to your remote (GitHub/GitLab/Bitbucket) — if unsure, run git push in your terminal.",
+          "Go to vercel.com in your browser and sign in (or create an account) using the same provider your repo is hosted on.",
+          "Click \"Add New Project\" (or equivalent) and select your repository from the list.",
+          "Confirm Vercel's framework preset auto-detects \"Next.js\" and leave the build and output settings at their defaults.",
+          "Click Deploy and wait for the build to finish.",
+          "Open the preview URL Vercel gives you and click through the same parity checklist from Phase 12 to confirm it works the same as locally."
+        ]
+      },
+      {
+        "text": "Merge nextjs-migration back into main once verified in production/preview.",
+        "why": "Only fold the migration branch back into main after you've actually seen it working correctly in a deployed preview — that way main always reflects something that's been verified to work, not just something that compiled.",
+        "link": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging",
+        "steps": [
+          "Once the deployed preview looks and behaves correctly, go to your Git host's website (GitHub, etc.) and open a new pull request from nextjs-migration into main.",
+          "Read through the full diff one more time, looking for leftover console.log statements, commented-out old code, or TODO comments.",
+          "Clean up anything you find, commit the fix, and let the PR update.",
+          "Click Merge (or Merge pull request) once you're satisfied.",
+          "Confirm your host automatically triggers a new production deploy from main, or trigger one manually if it doesn't."
+        ]
+      }
+    ]
+  }
+];
+
+const phasesEl = document.getElementById("phases");
+const overallFill = document.getElementById("overall-fill");
+const overallCount = document.getElementById("overall-count");
+
+// Read any progress baked into this file by a previous "Save progress" download.
+// Format: { "0-0": true, "0-1": false, ... } keyed by "phaseIdx-itemIdx".
+// On a fresh, never-saved copy of this file this is just "{}".
+let savedState = {};
+try {
+  savedState = JSON.parse(document.getElementById("saved-state").textContent || "{}");
+} catch (e) {
+  savedState = {};
+}
+
+function buildUI() {
+  phasesEl.innerHTML = "";
+  DATA.forEach((phase, pIdx) => {
+    const phaseDiv = document.createElement("div");
+    phaseDiv.className = "phase";
+    phaseDiv.dataset.phase = pIdx;
+
+    const header = document.createElement("div");
+    header.className = "phase-header";
+    header.innerHTML = `
+      <span class="phase-title">${phase.title}</span>
+      <span class="phase-meta">
+        <span class="phase-count" data-phase-count="${pIdx}">0/${phase.items.length}</span>
+        <span class="phase-mini-bar"><span class="phase-mini-fill" data-phase-fill="${pIdx}" style="width:0%"></span></span>
+        <span class="chevron">▾</span>
+      </span>
+    `;
+    header.addEventListener("click", () => {
+      phaseDiv.classList.toggle("collapsed");
+    });
+
+    const itemsWrap = document.createElement("div");
+    itemsWrap.className = "phase-items";
+
+    phase.items.forEach((item, iIdx) => {
+      const key = `${pIdx}-${iIdx}`;
+      const isChecked = savedState[key] === true;
+
+      const row = document.createElement("div");
+      row.className = "item-row" + (isChecked ? " checked" : "");
+
+      const main = document.createElement("label");
+      main.className = "item-main";
+      main.innerHTML = `<input type="checkbox" class="item-checkbox" data-phase="${pIdx}" data-item="${iIdx}" ${isChecked ? "checked" : ""} /><span></span>`;
+      main.querySelector("span").textContent = item.text;
+
+      const whyToggle = document.createElement("button");
+      whyToggle.type = "button";
+      whyToggle.className = "why-toggle";
+      whyToggle.textContent = "Why?";
+      whyToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        row.classList.toggle("explained");
+        whyToggle.textContent = row.classList.contains("explained") ? "Hide" : "Why?";
+      });
+      main.appendChild(whyToggle);
+
+      let stepProgressEl = null;
+      if (item.steps && item.steps.length) {
+        const stepsToggle = document.createElement("button");
+        stepsToggle.type = "button";
+        stepsToggle.className = "steps-toggle";
+        stepsToggle.textContent = "Steps";
+        stepsToggle.addEventListener("click", (e) => {
+          e.preventDefault();
+          row.classList.toggle("steps-shown");
+          stepsToggle.textContent = row.classList.contains("steps-shown") ? "Hide" : "Steps";
+        });
+        main.appendChild(stepsToggle);
+
+        stepProgressEl = document.createElement("span");
+        stepProgressEl.className = "step-progress";
+        stepProgressEl.dataset.total = item.steps.length;
+        const doneCount = item.steps.filter((_, sIdx) => savedState[`${pIdx}-${iIdx}-${sIdx}`] === true).length;
+        stepProgressEl.textContent = `${doneCount}/${item.steps.length}`;
+        main.appendChild(stepProgressEl);
+      }
+
+      const hasNeeds = item.needs && ((item.needs.props && item.needs.props.length) || (item.needs.features && item.needs.features.length));
+      if (hasNeeds) {
+        const needsToggle = document.createElement("button");
+        needsToggle.type = "button";
+        needsToggle.className = "needs-toggle";
+        needsToggle.textContent = "Props/State";
+        needsToggle.addEventListener("click", (e) => {
+          e.preventDefault();
+          row.classList.toggle("needs-shown");
+          needsToggle.textContent = row.classList.contains("needs-shown") ? "Hide" : "Props/State";
+        });
+        main.appendChild(needsToggle);
+      }
+
+      const whyBox = document.createElement("div");
+      whyBox.className = "why-box";
+      whyBox.textContent = item.why;
+      if (item.link) {
+        whyBox.appendChild(document.createTextNode(" "));
+        const learnMore = document.createElement("a");
+        learnMore.className = "learn-more";
+        learnMore.href = item.link;
+        learnMore.target = "_blank";
+        learnMore.rel = "noopener";
+        learnMore.textContent = "Learn more →";
+        whyBox.appendChild(document.createElement("br"));
+        whyBox.appendChild(learnMore);
+      }
+
+      const checkbox = main.querySelector("input");
+      checkbox.addEventListener("change", () => {
+        row.classList.toggle("checked", checkbox.checked);
+        updateProgress();
+      });
+
+      row.appendChild(main);
+      row.appendChild(whyBox);
+
+      if (item.steps && item.steps.length) {
+        const stepsBox = document.createElement("div");
+        stepsBox.className = "steps-box";
+        const ol = document.createElement("ol");
+        item.steps.forEach((stepText, sIdx) => {
+          const li = document.createElement("li");
+          const stepKey = `${pIdx}-${iIdx}-${sIdx}`;
+          const stepChecked = savedState[stepKey] === true;
+          if (stepChecked) li.classList.add("step-done");
+
+          const label = document.createElement("label");
+          label.className = "step-label";
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.className = "step-checkbox";
+          cb.dataset.phase = pIdx;
+          cb.dataset.item = iIdx;
+          cb.dataset.step = sIdx;
+          cb.checked = stepChecked;
+          cb.addEventListener("change", () => {
+            li.classList.toggle("step-done", cb.checked);
+            if (stepProgressEl) {
+              const done = Array.from(ol.querySelectorAll(".step-checkbox")).filter(x => x.checked).length;
+              stepProgressEl.textContent = `${done}/${item.steps.length}`;
+            }
+          });
+
+          const span = document.createElement("span");
+          span.textContent = stepText;
+
+          label.appendChild(cb);
+          label.appendChild(span);
+          li.appendChild(label);
+          ol.appendChild(li);
+        });
+        stepsBox.appendChild(ol);
+        row.appendChild(stepsBox);
+      }
+
+      if (hasNeeds) {
+        const needsBox = document.createElement("div");
+        needsBox.className = "needs-box";
+
+        const addGroup = (label, entries) => {
+          if (!entries || !entries.length) return;
+          const group = document.createElement("div");
+          group.className = "needs-group";
+          const labelEl = document.createElement("span");
+          labelEl.className = "needs-label";
+          labelEl.textContent = label;
+          group.appendChild(labelEl);
+          const ul = document.createElement("ul");
+          entries.forEach(entryText => {
+            const li = document.createElement("li");
+            const code = document.createElement("code");
+            code.textContent = entryText;
+            li.appendChild(code);
+            ul.appendChild(li);
+          });
+          group.appendChild(ul);
+          needsBox.appendChild(group);
+        };
+
+        addGroup("Props", item.needs.props);
+        addGroup("React features", item.needs.features);
+        row.appendChild(needsBox);
+      }
+
+      itemsWrap.appendChild(row);
+    });
+
+    phaseDiv.appendChild(header);
+    phaseDiv.appendChild(itemsWrap);
+    phasesEl.appendChild(phaseDiv);
+  });
+}
+
+function updateProgress() {
+  let totalDone = 0, totalItems = 0;
+  DATA.forEach((phase, pIdx) => {
+    const boxes = document.querySelectorAll(`input.item-checkbox[data-phase="${pIdx}"]`);
+    let done = 0;
+    boxes.forEach(b => { if (b.checked) done++; });
+    totalDone += done;
+    totalItems += boxes.length;
+
+    document.querySelector(`[data-phase-count="${pIdx}"]`).textContent = `${done}/${boxes.length}`;
+    const pct = boxes.length ? Math.round((done / boxes.length) * 100) : 0;
+    document.querySelector(`[data-phase-fill="${pIdx}"]`).style.width = pct + "%";
+
+    const isPhaseComplete = boxes.length > 0 && done === boxes.length;
+    const phaseDiv = document.querySelector(`.phase[data-phase="${pIdx}"]`);
+    if (phaseDiv) {
+      phaseDiv.classList.toggle("phase-fully-done", isPhaseComplete);
+      phaseDiv.style.display = (hideCompletedPhases && isPhaseComplete) ? "none" : "";
+    }
+  });
+  overallCount.textContent = `${totalDone} / ${totalItems} done`;
+  overallFill.style.width = totalItems ? Math.round((totalDone / totalItems) * 100) + "%" : "0%";
+}
+
+document.getElementById("reset-btn").addEventListener("click", () => {
+  document.querySelectorAll('input[type="checkbox"]').forEach(b => {
+    b.checked = false;
+  });
+  document.querySelectorAll(".item-row.checked").forEach(row => row.classList.remove("checked"));
+  document.querySelectorAll("li.step-done").forEach(li => li.classList.remove("step-done"));
+  document.querySelectorAll(".step-progress").forEach(el => {
+    el.textContent = `0/${el.dataset.total}`;
+  });
+  updateProgress();
+});
+
+document.getElementById("expand-btn").addEventListener("click", () => {
+  document.querySelectorAll(".phase").forEach(p => p.classList.remove("collapsed"));
+});
+document.getElementById("collapse-btn").addEventListener("click", () => {
+  document.querySelectorAll(".phase").forEach(p => p.classList.add("collapsed"));
+});
+
+let allExplained = false;
+document.getElementById("explain-all-btn").addEventListener("click", (e) => {
+  allExplained = !allExplained;
+  document.querySelectorAll(".item-row").forEach(row => {
+    row.classList.toggle("explained", allExplained);
+    const btn = row.querySelector(".why-toggle");
+    if (btn) btn.textContent = allExplained ? "Hide" : "Why?";
+  });
+  e.target.textContent = allExplained ? "Hide all explanations" : "Show all explanations";
+});
+
+let allStepsShown = false;
+document.getElementById("steps-all-btn").addEventListener("click", (e) => {
+  allStepsShown = !allStepsShown;
+  document.querySelectorAll(".item-row").forEach(row => {
+    if (!row.querySelector(".steps-box")) return;
+    row.classList.toggle("steps-shown", allStepsShown);
+    const btn = row.querySelector(".steps-toggle");
+    if (btn) btn.textContent = allStepsShown ? "Hide" : "Steps";
+  });
+  e.target.textContent = allStepsShown ? "Hide all steps" : "Show all steps";
+});
+
+let hideCompletedPhases = false;
+document.getElementById("hide-completed-btn").addEventListener("click", (e) => {
+  hideCompletedPhases = !hideCompletedPhases;
+  e.target.textContent = hideCompletedPhases ? "Show all phases" : "Hide completed phases";
+  updateProgress();
+});
+
+let allNeedsShown = false;
+document.getElementById("needs-all-btn").addEventListener("click", (e) => {
+  allNeedsShown = !allNeedsShown;
+  document.querySelectorAll(".item-row").forEach(row => {
+    if (!row.querySelector(".needs-box")) return;
+    row.classList.toggle("needs-shown", allNeedsShown);
+    const btn = row.querySelector(".needs-toggle");
+    if (btn) btn.textContent = allNeedsShown ? "Hide" : "Props/State";
+  });
+  e.target.textContent = allNeedsShown ? "Hide all props/state" : "Show all props/state";
+});
+
+document.getElementById("save-btn").addEventListener("click", () => {
+  // No storage APIs used. Instead: write the current checked state into the
+  // #saved-state JSON script tag, then serialize the *original* static
+  // document (not the JS-built one) with that updated tag, and trigger a
+  // download. Reopening the downloaded file re-reads #saved-state on load
+  // and pre-checks the matching boxes.
+  const state = {};
+  document.querySelectorAll('input[type="checkbox"]').forEach(b => {
+    const key = b.dataset.step !== undefined
+      ? `${b.dataset.phase}-${b.dataset.item}-${b.dataset.step}`
+      : `${b.dataset.phase}-${b.dataset.item}`;
+    state[key] = b.checked;
+  });
+
+  const stateTag = document.getElementById("saved-state");
+  stateTag.textContent = JSON.stringify(state);
+
+  const htmlContent = "<!doctype html>\n" + document.documentElement.outerHTML;
+  const blob = new Blob([htmlContent], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `migration-checklist-progress-${stamp}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("resources-header").addEventListener("click", () => {
+  document.getElementById("resources").classList.toggle("collapsed");
+});
+
+buildUI();
+updateProgress();
+</script>
+</body>
+</html>
